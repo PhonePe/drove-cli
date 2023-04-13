@@ -1,0 +1,5 @@
+*.conf
+*.log
+out
+__pycache__
+.*.sw*
