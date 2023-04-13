@@ -10,7 +10,7 @@ def print_dict(data: dict, level: int = 0):
         if type(value) is dict and not len(dict(value)) == 0:
             print(f"{key: <30}")
             print_dict(value, level + 1)
-        elif all(isinstance(n, dict) for n in value):
+        elif type(value) is list and all(isinstance(n, dict) for n in value):
             print(f"{key: <30}")
             for item in value:
                 print_dict(item, level + 1)
