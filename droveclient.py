@@ -60,7 +60,7 @@ class DroveClient:
         except Exception as e:
             raise DroveException(status_code, str(e))
         if api_response["status"] != "SUCCESS":
-            raise DroveException(status_code, str = api_response.message, raw=text)
+            raise DroveException(status_code, message = api_response.get("message", ""), raw=text)
         return api_response["data"]
 
     def get_raw(self, path: str, expected_status: int = 200) -> dict:

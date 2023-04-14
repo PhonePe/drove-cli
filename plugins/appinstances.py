@@ -44,7 +44,6 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("instance_id", metavar="instance-id", help="Application Instance ID")
         sub_parser.add_argument("file", help="Log filename to download")
         sub_parser.add_argument("--out", "-o", help="Filename to download to. Default is the same filename as provided.")
-
         sub_parser.set_defaults(func=self.log_download)
 
         # sub_parser = commands.add_parser("create", help="Create application")
@@ -84,14 +83,9 @@ class Applications(plugins.DrovePlugin):
         data["App ID"] = raw["appId"]
         data["State"] = raw["state"]
         data["Host"] = raw.get("localInfo", dict()).get("hostname", "")
-        cpu_list = [r for r in raw.get("resources", list()) if r.get("type", "") == "CPU"]
-        if len(cpu_list) > 0:
-            data["CPU"] = ", ".join(["NUMA Node %s: Cores: %s" % (key, value) for (key, value) in cpu_list[0].get("cores", dict()).items()])
-        memory_list = [r for r in raw.get("resources", list()) if r.get("type", "") == "MEMORY"]
-        if len(memory_list) > 0:
-            data["Memory (MB)"] = ", ".join(["NUMA Node %s: Cores: %s" % (key, value) for (key, value) in memory_list[0].get("memoryInMB", dict()).items()])
+        droveutils.populate_resources(raw, data)
         ports = raw.get("localInfo", dict()).get("ports", dict())
-        data["Ports"] = ", ".join(["Name: %s %s" % (key, "Container: {container} Host: {host} Type: {type}".format(container = value.get("containerPort", ""), host = value.get("hostPort", ""), type = value.get("portType", ""))) for (key, value) in ports.items()])
+        data["Ports"] = ", ".join(["%s: %s" % (key, "{containerPort}->{hostPort} ({portType})".format_map(value)) for (key, value) in ports.items()])
         data["Metadata"] = ", ".join(["%s: %s" % (key,value) for (key, value) in raw.get("metadata", dict())])
         data["Error Message"] = raw.get("errorMessage", "").strip('\n')
         data["Created"] = droveutils.to_date(raw.get("created"))

@@ -34,6 +34,14 @@ def to_date(epoch: int) -> str:
 def now():
     return round(time.time() * 1000)
 
+def populate_resources(raw: dict, output: dict):
+    cpu_list = [r for r in raw.get("resources", list()) if r.get("type", "") == "CPU"]
+    if len(cpu_list) > 0:
+        output["CPU"] = ", ".join(["NUMA Node %s: Cores: %s" % (key, value) for (key, value) in cpu_list[0].get("cores", dict()).items()])
+    memory_list = [r for r in raw.get("resources", list()) if r.get("type", "") == "MEMORY"]
+    if len(memory_list) > 0:
+        output["Memory (MB)"] = ", ".join(["NUMA Node %s: Cores: %s" % (key, value) for (key, value) in memory_list[0].get("memoryInMB", dict()).items()])
+
 def list_logs(drove_client: droveclient.DroveClient, prefix: str, domain: str, id: str):
     data = drove_client.get_raw("/apis/v1/logfiles/{prefix}/{domain}/{id}/list".format(prefix=prefix, domain=domain, id=id))
     print_dict(data)
