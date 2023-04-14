@@ -24,8 +24,11 @@ def print_json(data: dict):
 def print_table(headers: list, data: list):
     print(tabulate.tabulate(data, headers=headers))
 
-def print_dict_table(data: dict):
-    print(tabulate.tabulate(data, headers="keys"))
+def print_dict_table(data: dict, headers: list):
+    if headers:
+        print(tabulate.tabulate(data, headers=headers))
+    else:
+        print(tabulate.tabulate(data, headers="keys"))
                             
 def to_date(epoch: int) -> str:
     date = datetime.datetime.fromtimestamp(epoch/1000)
