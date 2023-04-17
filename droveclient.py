@@ -8,6 +8,15 @@ from pathlib import Path
 from requests.adapters import HTTPAdapter, Retry
 from types import SimpleNamespace
 
+class TokenAuth(requests.auth.AuthBase):
+    def __init__(self, token: str):
+        self.token = token
+        super().__init__()
+
+    def __call__(self, r):
+        r.headers.update({"Authorization": self.token})
+        return r
+
 class DroveException(Exception):
     """Exception raised while callign drove endpoint"""
 
@@ -20,6 +29,8 @@ class DroveClient:
     def __init__(self):
         self.endpoint: str = None
         self.auth_header: str = None
+        self.username = None
+        self.password = None
         self.insecure: bool = False
         self.session = requests.session()
         retries = Retry(connect=5,
@@ -30,16 +41,23 @@ class DroveClient:
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
     
 
-    def start(self, endpoint: str = None, auth_header: str = None, insecure: bool = False):
+    def start(self,
+               endpoint: str = None,
+               auth_header: str = None,
+               username: str = None,
+               password: str = None,
+               insecure: bool = False):
         self.endpoint = endpoint
         self.auth_header = auth_header
         self.insecure = insecure
         self.session.verify = not insecure
         if insecure:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        if username != None and password != None:
+            self.session.auth = requests.auth.HTTPBasicAuth(username, password)
+        elif auth_header:
+            self.session.auth = TokenAuth(auth_header)
 
-        if auth_header:
-            self.session.headers.update({"Authorization": auth_header})
         self.get("/apis/v1/ping")
         # print("Connection validated for endpoint: " + self.endpoint)        
 
@@ -101,6 +119,8 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
     endpoint = args.endpoint
     auth_header = args.auth_header
     insecure = args.insecure
+    username = args.username
+    password = args.password
 
     # If cmdl options are not passed, see if config file is passed
     if endpoint is None:
@@ -113,9 +133,12 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
         if os.path.isfile(config_file):
             config_parser = configparser.ConfigParser()
             try:
-                config_parser.read(config_file)
+                with open(config_file) as stream:
+                    config_parser.read_string("[drove]\n" + stream.read())
                 drove_config = config_parser["drove"]
                 endpoint = drove_config["endpoint"]
+                username = drove_config.get("username")
+                password = drove_config.get("password")
                 auth_header = drove_config.get("auth_header", None)
                 insecure = drove_config.get("insecure", False)
             except Exception as e:
@@ -125,8 +148,8 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
 
     # At least endpoint is needed
     if endpoint == None:
-        print("error: provide config file or required command line params for drove connectivity\n")
+        raise Exception("error: provide config file or required command line params for drove connectivity\n")
         return None
-    drove_client.start(endpoint, auth_header, insecure)
+    drove_client.start(endpoint, auth_header, username, password, insecure)
     return drove_client
     
