@@ -123,3 +123,6 @@ Drove CLI commands are organised in the following sections
 * **_tasks_** - Drove task related commands
 
 Please use `./drove <command> -h` to see the list of operations provided for each command section.
+
+## Requirements
+The CLI is written in Python 3x
