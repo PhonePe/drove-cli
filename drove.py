@@ -16,7 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--password", "-p", help="Drove cluster password")
     return parser
 
-if __name__ == '__main__':
+def run():
     parser = build_parser()
     try:
         drovecli.DroveCli(parser).run()
@@ -26,5 +26,5 @@ if __name__ == '__main__':
         print("error: " + str(e))
         parser.print_help()
 
-
-
+if __name__ == '__main__':
+    run()

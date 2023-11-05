@@ -3,11 +3,41 @@
 Command line interface for the Drove Container Orchestrator.
 
 ## Installation
-To install the required dependencies please run the following command:
 
+### Create Virtual Environment
+
+```bash
+VENV_BASE_DIRECTORY=/path/to/base/directory/for/virtual/env
+cd ${VENV_BASE_DIRECTORY}
+python3 -m venv drove_cli
 ```
-pip install -r requirements.txt
+
+### Activate Virtual Environment
+
+```bash
+cd ${VENV_BASE_DIRECTORY}/drove_cli
+source bin/activate
 ```
+
+### Install or Upgrade drove_cli using Pip
+
+```bash
+# For installing/upgrading to latest snapshot version
+pip3 install --index https://artifactory.phonepe.com/repository/pypi-snapshots/simple --extra-index-url https://artifactory.phonepe.com/repository/pypi-org/simple --ignore-installed --force-reinstall --no-cache-dir com.phonepe.infra.drove_cli
+
+# For installing/upgrading to latest release version
+pip3 install --index https://artifactory.phonepe.com/repository/pypi-releases/simple --extra-index-url https://artifactory.phonepe.com/repository/pypi-org/simple com.phonepe.infra.drove_cli
+```
+
+After installation `drove` command can be used as per user guide provided below. Once usage of `drove` is done, virtual environment can be deactivated.
+
+### Deactivate Virtual Environment
+
+```bash
+deactivate
+```
+
+Reactivate/deactivate virtual environment based on the need to utilize drove cli.
 
 # Getting Started
 

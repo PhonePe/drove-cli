@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "com.phonepe.infra.drove_cli"
+version = "1.0.0a0"
+description = "Drove Command Line Interface"
+authors = ["infra-dev <infra-dev@phonepe.com>"]
+readme = "README.md"
+packages = [{include = "plugins"}, {include = "*.py"}]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+tabulate = "^0.9.0"
+urllib3 = "^2.0.7"
+requests = "^2.31.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+drove = "drove:run"
