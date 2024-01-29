@@ -33,6 +33,9 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("spec_file", metavar="spec-file", help="JSON spec file for the application")
         sub_parser.set_defaults(func=self.create_app)
         
+        sub_parser = commands.add_parser("destroy", help="Destroy an app with zero instances")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.set_defaults(func=self.destroy_app)
 
         # sub_parser = commands.add_parser("create", help="Create application")
         # sub_parser.add_argument("definition", help="JSON application definition")
@@ -89,4 +92,19 @@ class Applications(plugins.DrovePlugin):
             print("Error creating app: {error}".format(error = str(e)))
         except Exception as e:
             print("Error creating application. Error: " + str(e))
-        
+
+    def destroy_app(self, options: SimpleNamespace):
+        try:
+            operation = {
+                "type": "DESTROY",
+                "appId": options.app_id,
+                "opSpec": {
+                   "timeout": "5m",
+                    "parallelism": 1,
+                    "failureStrategy": "STOP"
+                }
+            }
+            data = self.drove_client.post("/apis/v1/applications/operations", operation)
+            print("Application destroyed")
+        except droveclient.DroveException as e:
+            print("Error destroying app: {error}".format(error = str(e)))
