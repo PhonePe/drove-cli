@@ -59,6 +59,10 @@ class Applications(plugins.DrovePlugin):
         sub_parser.set_defaults(func=self.suspend_app)
 
 
+        sub_parser = commands.add_parser("cancelop", help="Cancel current operation")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.set_defaults(func=self.cancel_app_operation)
+
         # sub_parser = commands.add_parser("create", help="Create application")
         # sub_parser.add_argument("definition", help="JSON application definition")
         
@@ -179,4 +183,11 @@ class Applications(plugins.DrovePlugin):
             data = self.drove_client.post("/apis/v1/applications/operations", operation)
             print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
         except droveclient.DroveException as e:
-            print("Error deploying instances for app: {error}".format(error = str(e))) 
+            print("Error deploying instances for app: {error}".format(error = str(e)))
+
+    def cancel_app_operation(self, options: SimpleNamespace):
+        try:
+            self.drove_client.post("/apis/v1/operations/{appId}/cancel".format(appId=options.app_id), None, False)
+            print("Operation cancellation request registered.")
+        except droveclient.DroveException as e:
+            print("Error suspending app: {error}".format(error = str(e)))

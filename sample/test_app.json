@@ -4,7 +4,7 @@
         "type": "SERVICE",
         "executable": {
             "type": "DOCKER",
-            "url": "docker.io/santanusinha/perf-test-server:0.1",
+            "url": "docker.io/santanusinha/perf-test-server:0.7-stable",
             "dockerPullTimeout": "100 seconds"
         },
         "exposedPorts": [
@@ -69,8 +69,7 @@
             "say_my_name": "heisenberg"
         },
         "env": {
-            "CORES": "8",
-            "DIE_FAST": "10"
+            "CORES": "8"
         },
         "exposureSpec": {
             "vhost": "test.hackathon.drove.phonepe.nb6",
