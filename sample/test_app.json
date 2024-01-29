@@ -1,0 +1,97 @@
+{
+        "name": "TEST_APP",
+        "version": "1",
+        "type": "SERVICE",
+        "executable": {
+            "type": "DOCKER",
+            "url": "docker.io/santanusinha/perf-test-server:0.1",
+            "dockerPullTimeout": "100 seconds"
+        },
+        "exposedPorts": [
+            {
+                "name": "main",
+                "port": 8000,
+                "type": "HTTP"
+            }
+        ],
+        "volumes": [],
+        "resources": [
+            {
+                "type": "CPU",
+                "count": 1
+            },
+            {
+                "type": "MEMORY",
+                "sizeInMB": 128
+            }
+        ],
+        "placementPolicy": {
+            "type": "ANY"
+        },
+        "healthcheck": {
+            "mode": {
+                "type": "HTTP",
+                "protocol": "HTTP",
+                "portName": "main",
+                "path": "/",
+                "verb": "GET",
+                "successCodes": [
+                    200
+                ],
+                "payload": "",
+                "connectionTimeout": "1 second"
+            },
+            "timeout": "1 second",
+            "interval": "5 seconds",
+            "attempts": 3,
+            "initialDelay": "0 seconds"
+        },
+        "readiness": {
+            "mode": {
+                "type": "HTTP",
+                "protocol": "HTTP",
+                "portName": "main",
+                "path": "/",
+                "verb": "GET",
+                "successCodes": [
+                    200
+                ],
+                "payload": "",
+                "connectionTimeout": "1 second"
+            },
+            "timeout": "1 second",
+            "interval": "3 seconds",
+            "attempts": 3,
+            "initialDelay": "0 seconds"
+        },
+        "tags": {
+            "superSpecialApp": "yes_i_am",
+            "say_my_name": "heisenberg"
+        },
+        "env": {
+            "CORES": "8",
+            "DIE_FAST": "10"
+        },
+        "exposureSpec": {
+            "vhost": "test.hackathon.drove.phonepe.nb6",
+            "portName": "main",
+            "mode": "ALL"
+        },
+        "preShutdown": {
+            "hooks": [
+                {
+                    "type": "HTTP",
+                    "protocol": "HTTP",
+                    "portName": "main",
+                    "path": "/",
+                    "verb": "GET",
+                    "successCodes": [
+                        200
+                    ],
+                    "payload": "",
+                    "connectionTimeout": "1 second"
+                }
+            ],
+            "waitBeforeKill": "3 seconds"
+        }
+    }

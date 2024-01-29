@@ -29,6 +29,11 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.set_defaults(func=self.show_spec)
 
+        sub_parser = commands.add_parser("create", help="Create application on cluster")
+        sub_parser.add_argument("spec_file", metavar="spec-file", help="JSON spec file for the application")
+        sub_parser.set_defaults(func=self.create_app)
+        
+
         # sub_parser = commands.add_parser("create", help="Create application")
         # sub_parser.add_argument("definition", help="JSON application definition")
         
@@ -64,4 +69,24 @@ class Applications(plugins.DrovePlugin):
     def show_spec(self, options: SimpleNamespace):
         data = self.drove_client.get("/apis/v1/applications/{app_id}/spec".format(app_id = options.app_id))
         droveutils.print_json(data)
+
+    def create_app(self, options: SimpleNamespace):
+        try:
+            with open(options.spec_file, 'r') as fp:
+                spec = json.load(fp)
+            operation = {
+                "type": "CREATE",
+                "spec": spec,
+                "opSpec": {
+                   "timeout": "5m",
+                    "parallelism": 1,
+                    "failureStrategy": "STOP"
+                }
+            }
+            data = self.drove_client.post("/apis/v1/applications/operations", operation)
+            print("Application created with app id: {appid}".format(appid=data["appId"]))
+        except droveclient.DroveException as e:
+            print("Error creating app: {error}".format(error = str(e)))
+        except Exception as e:
+            print("Error creating application. Error: " + str(e))
         
