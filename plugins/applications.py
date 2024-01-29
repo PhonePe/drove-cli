@@ -37,12 +37,27 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.set_defaults(func=self.destroy_app)
 
+        sub_parser = commands.add_parser("deploy", help="Deploy new app instances.")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.add_argument("instances", metavar="instances", type=int, help="Number of new instances to be created")
+        sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
+        sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.set_defaults(func=self.deploy_app)
+
+
         sub_parser = commands.add_parser("scale", help="Scale app to required instances. Will increase or decrease instances on the cluster to match this number")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
-        sub_parser.add_argument("instances", metavar="instances", type=int, choices=range(0,2048), help="Number of instances. Setting this to 0 will suspend the app")
+        sub_parser.add_argument("instances", metavar="instances", type=int, help="Number of instances. Setting this to 0 will suspend the app")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.set_defaults(func=self.scale_app)
+
+        sub_parser = commands.add_parser("suspend", help="Suspend the app")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
+        sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.set_defaults(func=self.suspend_app)
+
 
         # sub_parser = commands.add_parser("create", help="Create application")
         # sub_parser.add_argument("definition", help="JSON application definition")
@@ -131,4 +146,37 @@ class Applications(plugins.DrovePlugin):
             data = self.drove_client.post("/apis/v1/applications/operations", operation)
             print("Application scaling command accepted. Please use appinstances comand or the UI to check status of deployment")
         except droveclient.DroveException as e:
-            print("Error destroying app: {error}".format(error = str(e)))
+            print("Error scaling app: {error}".format(error = str(e)))
+
+    def suspend_app(self, options: SimpleNamespace):
+        try:
+            operation = {
+                "type": "SUSPEND",
+                "appId": options.app_id,
+                "opSpec": {
+                   "timeout": options.timeout,
+                    "parallelism": options.parallelism,
+                    "failureStrategy": "STOP"
+                }
+            }
+            data = self.drove_client.post("/apis/v1/applications/operations", operation)
+            print("Application suspend command accepted.")
+        except droveclient.DroveException as e:
+            print("Error suspending app: {error}".format(error = str(e)))
+
+    def deploy_app(self, options: SimpleNamespace):
+        try:
+            operation = {
+                "type": "START_INSTANCES",
+                "appId": options.app_id,
+                "instances": options.instances,
+                "opSpec": {
+                   "timeout": options.timeout,
+                    "parallelism": options.parallelism,
+                    "failureStrategy": "STOP"
+                }
+            }
+            data = self.drove_client.post("/apis/v1/applications/operations", operation)
+            print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
+        except droveclient.DroveException as e:
+            print("Error deploying instances for app: {error}".format(error = str(e))) 
