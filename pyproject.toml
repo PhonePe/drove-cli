@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "com.phonepe.infra.drove_cli"
-version = "1.0.1a0"
+version = "1.0.1"
 description = "Drove Command Line Interface"
 authors = ["infra-dev <infra-dev@phonepe.com>"]
 readme = "README.md"
