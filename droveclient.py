@@ -108,29 +108,6 @@ class DroveClient:
             response = self.session.post(self.endpoint + path, json=body)
         except requests.ConnectionError as e:
             raise DroveException(-1, "Error connecting to endpoint " + self.endpoint, raw={})
-
-        # status_code = response.status_code
-        # text = response.text
-        # if status_code != expected_status:
-        #     api_response = None
-        #     if response.json() != None:
-        #         api_response = response.json
-
-        #     raise DroveException(status_code,
-        #                         "Drove call failed with status code: {code}, error: {message}" .format(code=status_code, message=text),
-        #                         api_response=api_response)
-        # if parse == False:
-        #     return None
-        # api_response = None
-        # try:
-        #     api_response = json.loads(text)
-        #     # api_response = json.loads(text, object_hook=lambda d: SimpleNamespace(**d))
-        # except Exception as e:
-        #     raise DroveException(status_code, str(e))
-        # if api_response["status"] != "SUCCESS":
-        #     raise DroveException(status_code, message = api_response.get("message", ""), raw=text, api_response=api_response)
-        # return api_response["data"]
-
         return handle_drove_response(response, expected_status)
         
 def handle_drove_response(response: requests.Response, expected_status: int):
