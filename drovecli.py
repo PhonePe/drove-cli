@@ -10,6 +10,7 @@ class DroveCli:
         self.parser = parser
         self.drove_client = droveclient.DroveClient()
         self.plugins: list = []
+        self.debug = False
         subparsers = parser.add_subparsers(help="Available plugins")
         for plugin_class in DrovePlugin.plugins:
             plugin = plugin_class()
@@ -21,6 +22,7 @@ class DroveCli:
         
     def run(self):
         args = self.parser.parse_args()
+        self.debug = args.debug
         drove_client = droveclient.build_drove_client(self.drove_client, args=args)
         if drove_client is None:
             return None

@@ -24,7 +24,7 @@ def print_json(data: dict):
 def print_table(headers: list, data: list):
     print(tabulate.tabulate(data, headers=headers))
 
-def print_dict_table(data: dict, headers: list):
+def print_dict_table(data: dict, headers: list = None):
     if headers:
         print(tabulate.tabulate(data, headers=headers))
     else:
@@ -72,3 +72,20 @@ def download_log(drove_client: droveclient.DroveClient, prefix: str, domain: str
     size = drove_client.get_to_file("/apis/v1/logfiles/{prefix}/{domain}/{id}/download/{name}"
                                     .format(prefix=prefix, domain=domain, id=id, name=file_name), outfilename)
     print("Downloaded size: {size:,} bytes".format(size = size))
+
+def print_drove_error(e: droveclient.DroveException, print_raw: bool):
+    printed = False
+    if e.api_response != None:
+        if "data" in e.api_response:
+            if "message" in e.api_response:
+                print("Error: [{code} - {status}] {message}.".format(message=e.api_response["message"], code=e.status_code, status=e.api_response["status"]))
+                printed = True
+            if "validationErrors" in e.api_response["data"]:
+                print("Validation errors:")
+                [print("  - " + err) for err in e.api_response["data"]["validationErrors"]]
+                printed = True
+        if print_raw:
+            print("Raw Response: ")
+            print_json(e.api_response)
+    if printed == False:
+        print("Error making Drove call: {error}".format(error = str(e)))

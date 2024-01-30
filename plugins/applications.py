@@ -68,9 +68,6 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.set_defaults(func=self.cancel_app_operation)
 
-        # sub_parser = commands.add_parser("create", help="Create application")
-        # sub_parser.add_argument("definition", help="JSON application definition")
-        
         super().populate_options(drove_client, parser)
 
 
@@ -119,96 +116,76 @@ class Applications(plugins.DrovePlugin):
             }
             data = self.drove_client.post("/apis/v1/applications/operations", operation)
             print("Application created with app id: {appid}".format(appid=data["appId"]))
-        except droveclient.DroveException as e:
-            print("Error creating app: {error}".format(error = str(e)))
-        except Exception as e:
+        except (OSError, IOError) as e:
             print("Error creating application. Error: " + str(e))
 
     def destroy_app(self, options: SimpleNamespace):
-        try:
-            operation = {
-                "type": "DESTROY",
-                "appId": options.app_id,
-                "opSpec": {
-                   "timeout": "5m",
-                    "parallelism": 1,
-                    "failureStrategy": "STOP"
-                }
+        operation = {
+            "type": "DESTROY",
+            "appId": options.app_id,
+            "opSpec": {
+                "timeout": "5m",
+                "parallelism": 1,
+                "failureStrategy": "STOP"
             }
-            data = self.drove_client.post("/apis/v1/applications/operations", operation)
-            print("Application destroyed")
-        except droveclient.DroveException as e:
-            print("Error destroying app: {error}".format(error = str(e)))
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Application destroyed")
 
     def scale_app(self, options: SimpleNamespace):
-        try:
-            operation = {
-                "type": "SCALE",
-                "appId": options.app_id,
-                "requiredInstances": options.instances,
-                "opSpec": {
-                   "timeout": options.timeout,
-                    "parallelism": options.parallelism,
-                    "failureStrategy": "STOP"
-                }
+        operation = {
+            "type": "SCALE",
+            "appId": options.app_id,
+            "requiredInstances": options.instances,
+            "opSpec": {
+                "timeout": options.timeout,
+                "parallelism": options.parallelism,
+                "failureStrategy": "STOP"
             }
-            data = self.drove_client.post("/apis/v1/applications/operations", operation)
-            print("Application scaling command accepted. Please use appinstances comand or the UI to check status of deployment")
-        except droveclient.DroveException as e:
-            print("Error scaling app: {error}".format(error = str(e)))
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Application scaling command accepted. Please use appinstances comand or the UI to check status of deployment")
 
     def suspend_app(self, options: SimpleNamespace):
-        try:
-            operation = {
-                "type": "SUSPEND",
-                "appId": options.app_id,
-                "opSpec": {
-                   "timeout": options.timeout,
-                    "parallelism": options.parallelism,
-                    "failureStrategy": "STOP"
-                }
+        operation = {
+            "type": "SUSPEND",
+            "appId": options.app_id,
+            "opSpec": {
+                "timeout": options.timeout,
+                "parallelism": options.parallelism,
+                "failureStrategy": "STOP"
             }
-            data = self.drove_client.post("/apis/v1/applications/operations", operation)
-            print("Application suspend command accepted.")
-        except droveclient.DroveException as e:
-            print("Error suspending app: {error}".format(error = str(e)))
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Application suspend command accepted.")
 
     def deploy_app(self, options: SimpleNamespace):
-        try:
-            operation = {
-                "type": "START_INSTANCES",
-                "appId": options.app_id,
-                "instances": options.instances,
-                "opSpec": {
-                   "timeout": options.timeout,
-                    "parallelism": options.parallelism,
-                    "failureStrategy": "STOP"
-                }
+        operation = {
+            "type": "START_INSTANCES",
+            "appId": options.app_id,
+            "instances": options.instances,
+            "opSpec": {
+                "timeout": options.timeout,
+                "parallelism": options.parallelism,
+                "failureStrategy": "STOP"
             }
-            data = self.drove_client.post("/apis/v1/applications/operations", operation)
-            print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
-        except droveclient.DroveException as e:
-            print("Error deploying instances for app: {error}".format(error = str(e)))
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
 
     def restart_app(self, options: SimpleNamespace):
-        try:
-            operation = {
-                "type": "REPLACE_INSTANCES",
-                "appId": options.app_id,
-                "opSpec": {
-                   "timeout": options.timeout,
-                    "parallelism": options.parallelism,
-                    "failureStrategy": "STOP"
-                }
+        operation = {
+            "type": "REPLACE_INSTANCES",
+            "appId": options.app_id,
+            "opSpec": {
+                "timeout": options.timeout,
+                "parallelism": options.parallelism,
+                "failureStrategy": "STOP"
             }
-            data = self.drove_client.post("/apis/v1/applications/operations", operation)
-            print("Application restart command accepted.")
-        except droveclient.DroveException as e:
-            print("Error suspending app: {error}".format(error = str(e)))
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Application restart command accepted.")
 
     def cancel_app_operation(self, options: SimpleNamespace):
-        try:
-            self.drove_client.post("/apis/v1/operations/{appId}/cancel".format(appId=options.app_id), None, False)
-            print("Operation cancellation request registered.")
-        except droveclient.DroveException as e:
-            print("Error suspending app: {error}".format(error = str(e)))
+        self.drove_client.post("/apis/v1/operations/{appId}/cancel".format(appId=options.app_id), None, False)
+        print("Operation cancellation request registered.")
