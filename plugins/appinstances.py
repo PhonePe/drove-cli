@@ -46,6 +46,21 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--out", "-o", help="Filename to download to. Default is the same filename as provided.")
         sub_parser.set_defaults(func=self.log_download)
 
+
+        sub_parser = commands.add_parser("replace", help="Replace specific app instances with fresh instances")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.add_argument("instance_ids", nargs="+", metavar="instance-id", help="Application Instance IDs")
+        sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
+        sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.set_defaults(func=self.replace)
+
+        sub_parser = commands.add_parser("kill", help="Kill specific app instances")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.add_argument("instance_ids", nargs="+", metavar="instance-id", help="Application Instance IDs")
+        sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
+        sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.set_defaults(func=self.kill)
+
         # sub_parser = commands.add_parser("create", help="Create application")
         # sub_parser.add_argument("definition", help="JSON application definition")
         
@@ -104,3 +119,32 @@ class Applications(plugins.DrovePlugin):
         if options.out and len(options.out) > 0:
             filename = options.out
         droveutils.download_log(self.drove_client, "applications", options.app_id, options.instance_id, options.file, filename)
+
+    def replace(self, options):
+        operation = {
+            "type": "REPLACE_INSTANCES",
+            "appId": options.app_id,
+            "instanceIds": options.instance_ids,
+            "opSpec": {
+                "timeout": options.timeout,
+                "parallelism": options.parallelism,
+                "failureStrategy": "STOP"
+            }
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Instance(s) replace command accepted.")
+
+    def kill(self, options):
+        operation = {
+            "type": "STOP_INSTANCES",
+            "appId": options.app_id,
+            "instanceIds": options.instance_ids,
+            "skipRespawn": True,
+            "opSpec": {
+                "timeout": options.timeout,
+                "parallelism": options.parallelism,
+                "failureStrategy": "STOP"
+            }
+        }
+        data = self.drove_client.post("/apis/v1/applications/operations", operation)
+        print("Instance(s) replace command accepted.")
