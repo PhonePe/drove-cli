@@ -3,6 +3,8 @@
 import argparse
 import drovecli
 import droveclient
+import droveutils
+import traceback
 
 def build_parser() -> argparse.ArgumentParser:
 
@@ -14,16 +16,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--insecure", "-i", help="Do not verify SSL cert for server")
     parser.add_argument("--username", "-u", help="Drove cluster username")
     parser.add_argument("--password", "-p", help="Drove cluster password")
+    parser.add_argument("--debug", "-d", help="Print details of errors", default=False, action="store_true")
     return parser
 
 def run():
     parser = build_parser()
+    client = None
     try:
-        drovecli.DroveCli(parser).run()
+        client = drovecli.DroveCli(parser)
+        client.run()
     except (BrokenPipeError, IOError, KeyboardInterrupt):
         pass
+    except droveclient.DroveException as e:
+        debug = True if client != None and client.debug else False
+        droveutils.print_drove_error(e, debug)
+        if debug:
+            traceback.print_exc()
+
     except Exception as e:
-        print("error: " + str(e))
+        print("Drove CLI error: " + str(e))
         parser.print_help()
 
 if __name__ == '__main__':
