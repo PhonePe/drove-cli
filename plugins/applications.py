@@ -58,6 +58,11 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.set_defaults(func=self.suspend_app)
 
+        sub_parser = commands.add_parser("restart", help="Restart am existing app instances.")
+        sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
+        sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.set_defaults(func=self.restart_app)
 
         sub_parser = commands.add_parser("cancelop", help="Cancel current operation")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
@@ -184,6 +189,22 @@ class Applications(plugins.DrovePlugin):
             print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
         except droveclient.DroveException as e:
             print("Error deploying instances for app: {error}".format(error = str(e)))
+
+    def restart_app(self, options: SimpleNamespace):
+        try:
+            operation = {
+                "type": "REPLACE_INSTANCES",
+                "appId": options.app_id,
+                "opSpec": {
+                   "timeout": options.timeout,
+                    "parallelism": options.parallelism,
+                    "failureStrategy": "STOP"
+                }
+            }
+            data = self.drove_client.post("/apis/v1/applications/operations", operation)
+            print("Application restart command accepted.")
+        except droveclient.DroveException as e:
+            print("Error suspending app: {error}".format(error = str(e)))
 
     def cancel_app_operation(self, options: SimpleNamespace):
         try:
