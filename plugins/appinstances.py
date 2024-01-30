@@ -147,4 +147,4 @@ class Applications(plugins.DrovePlugin):
             }
         }
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Instance(s) replace command accepted.")
+        print("Instance(s) kill command accepted.")
