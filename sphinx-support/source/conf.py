@@ -14,6 +14,7 @@ author = 'Santanu Sinha'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = []
+extensions += ['sphinx_markdown_builder']
 extensions += ['sphinxarg.ext']
 
 templates_path = ['_templates']
@@ -26,3 +27,7 @@ exclude_patterns = []
 
 html_theme = 'alabaster'
 html_static_path = ['_static']
+
+
+# -- Options for markdown output -------------------------------------------------
+markdown_docinfo = False
