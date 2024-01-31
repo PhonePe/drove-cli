@@ -19,6 +19,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--debug", "-d", help="Print details of errors", default=False, action="store_true")
     return parser
 
+def get_parser():
+    parser = build_parser()
+    client = None
+    client = drovecli.DroveCli(parser)
+    return client.parser
+ 
+
 def run():
     parser = build_parser()
     client = None
