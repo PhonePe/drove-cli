@@ -398,6 +398,7 @@ drove apps deploy [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id in
                         Number of parallel threads to be used to execute operation (default: 1)
   --timeout TIMEOUT, -t TIMEOUT
                         Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure instance count is reached
 ```
 ##### scale
 
@@ -418,6 +419,7 @@ drove apps scale [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id ins
                         Number of parallel threads to be used to execute operation (default: 1)
   --timeout TIMEOUT, -t TIMEOUT
                         Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure instance count is reached
 ```
 
 ##### suspend
@@ -437,6 +439,7 @@ drove apps suspend [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id
                         Number of parallel threads to be used to execute operation (default: 1)
   --timeout TIMEOUT, -t TIMEOUT
                         Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure all instances are suspended
 ```
 
 ##### restart
@@ -457,6 +460,7 @@ drove apps restart [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id
                         Number of parallel threads to be used to execute operation (default: 1)
   --timeout TIMEOUT, -t TIMEOUT
                         Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure all instances are replaced
 ```
 ##### cancelop
 
@@ -562,6 +566,7 @@ drove appinstances replace [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] 
                         Number of parallel threads to be used to execute operation (default: 1)
   --timeout TIMEOUT, -t TIMEOUT
                         Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure all instances are replaced
 ```
 
 ##### kill
@@ -581,6 +586,7 @@ drove appinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app
                         Number of parallel threads to be used to execute operation
   --timeout TIMEOUT, -t TIMEOUT
                         Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure all instances are killed
 ```
 ### tasks
 ---
