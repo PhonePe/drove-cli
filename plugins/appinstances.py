@@ -1,10 +1,11 @@
 import argparse
 import droveclient
 import droveutils
-import json
 import plugins
+import tenacity
 
 from operator import itemgetter
+from tenacity import retry
 from types import SimpleNamespace
 
 class Applications(plugins.DrovePlugin):
@@ -52,6 +53,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("instance_ids", nargs="+", metavar="instance-id", help="Application Instance IDs")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are replaced", default=False, action="store_true")
         sub_parser.set_defaults(func=self.replace)
 
         sub_parser = commands.add_parser("kill", help="Kill specific app instances")
@@ -59,6 +61,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("instance_ids", nargs="+", metavar="instance-id", help="Application Instance IDs")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are killed", default=False, action="store_true")
         sub_parser.set_defaults(func=self.kill)
 
         # sub_parser = commands.add_parser("create", help="Create application")
@@ -132,7 +135,11 @@ class Applications(plugins.DrovePlugin):
             }
         }
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Instance(s) replace command accepted.")
+        if options.wait:
+            self.ensure_replaced(options.app_id, set(options.instance_ids))
+            print("All instances replaced")
+        else:
+            print("Instance(s) replace command accepted.")
 
     def kill(self, options):
         operation = {
@@ -147,4 +154,16 @@ class Applications(plugins.DrovePlugin):
             }
         }
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Instance(s) kill command accepted.")
+        if options.wait:
+            self.ensure_replaced(options.app_id, set(options.instance_ids))
+            print("All instances replaced")
+        else:
+            print("Instance(s) kill command accepted.")
+
+    @retry(wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+           retry=tenacity.retry_if_result(lambda x: x == False))
+    def ensure_replaced(self, app_id: str, existing: set) -> bool:
+        healthy = self.drove_client.app_instances(app_id, False)
+        overlap = len(existing.intersection(healthy))
+        print("Remaining old instance count: {overlap}".format(overlap = overlap))
+        return overlap == 0
