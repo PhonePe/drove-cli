@@ -3,8 +3,10 @@ import droveclient
 import droveutils
 import json
 import plugins
+import tenacity
 
 from operator import itemgetter
+from tenacity import retry
 from types import SimpleNamespace
 
 class Applications(plugins.DrovePlugin):
@@ -42,6 +44,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("instances", metavar="instances", type=int, help="Number of new instances to be created")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.add_argument("--wait", "-w", help="Wait to ensure instance count is reached", default=False, action="store_true")
         sub_parser.set_defaults(func=self.deploy_app)
 
 
@@ -50,18 +53,21 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("instances", metavar="instances", type=int, help="Number of instances. Setting this to 0 will suspend the app")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.add_argument("--wait", "-w", help="Wait to ensure instance count is reached", default=False, action="store_true")
         sub_parser.set_defaults(func=self.scale_app)
 
         sub_parser = commands.add_parser("suspend", help="Suspend the app")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are suspended", default=False, action="store_true")
         sub_parser.set_defaults(func=self.suspend_app)
 
         sub_parser = commands.add_parser("restart", help="Restart am existing app instances.")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
+        sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are replaced", default=False, action="store_true")
         sub_parser.set_defaults(func=self.restart_app)
 
         sub_parser = commands.add_parser("cancelop", help="Cancel current operation")
@@ -144,7 +150,12 @@ class Applications(plugins.DrovePlugin):
             }
         }
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Application scaling command accepted. Please use appinstances comand or the UI to check status of deployment")
+        if options.wait:
+            print("Waiting till required scale is reached")
+            self.ensure_count(options.app_id, options.instances)
+            print("Required number of instances reached")
+        else:
+            print("Application scaling command accepted. Please use appinstances comand or the UI to check status of deployment")
 
     def suspend_app(self, options: SimpleNamespace):
         operation = {
@@ -157,7 +168,12 @@ class Applications(plugins.DrovePlugin):
             }
         }
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Application suspend command accepted.")
+        if options.wait:
+            print("Waiting till all instances shut down")
+            self.ensure_count(options.app_id, 0)
+            print("All instances suspended")
+        else:
+            print("Application suspend command accepted.")
 
     def deploy_app(self, options: SimpleNamespace):
         operation = {
@@ -170,8 +186,14 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        existing_count = 0 if options.wait == False else len(self.drove_client.app_instances(options.app_id))
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
+        if options.wait:
+            print("Waiting till required scale is reached")
+            self.ensure_count(options.app_id, existing_count + options.instances)
+            print("Required number of instances reached")
+        else:
+            print("Application deployment command accepted. Please use appinstances comand or the UI to check status of deployment")
 
     def restart_app(self, options: SimpleNamespace):
         operation = {
@@ -183,9 +205,29 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        existing = [] if options.wait == False else self.drove_client.app_instances(options.app_id)
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
-        print("Application restart command accepted.")
+        if options.wait:
+            self.ensure_replaced(options.app_id, set(existing))
+            print("All instances replaced")
+        else:
+            print("Application restart command accepted.")
 
     def cancel_app_operation(self, options: SimpleNamespace):
         self.drove_client.post("/apis/v1/operations/{appId}/cancel".format(appId=options.app_id), None, False)
         print("Operation cancellation request registered.")
+
+    @retry(wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+           retry=tenacity.retry_if_result(lambda x: x == False))
+    def ensure_count(self, app_id: str, instances: int) -> bool:
+        healthy = len(self.drove_client.app_instances(app_id))
+        print("Healthy instances count: {count}".format(count=healthy))
+        return healthy == instances
+
+    @retry(wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+           retry=tenacity.retry_if_result(lambda x: x == False))
+    def ensure_replaced(self, app_id: str, existing: set) -> bool:
+        healthy = self.drove_client.app_instances(app_id)
+        overlap = len(existing.intersection(healthy))
+        print("Remaining old instance count: {overlap}".format(overlap = overlap))
+        return overlap == 0

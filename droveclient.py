@@ -62,6 +62,15 @@ class DroveClient:
         self.get("/apis/v1/ping")
         # print("Connection validated for endpoint: " + self.endpoint)        
 
+    def app_instances(self, app_id: str, healthy_only: bool = True):
+        data = self.get("/apis/v1/applications/{app_id}/instances".format(app_id=app_id))
+        if healthy_only:
+            instances = [instance["instanceId"] for instance in data if instance["state"] == "HEALTHY"]
+        else:
+            instances = [instance["instanceId"] for instance in data]
+        return set(instances)
+
+
     def get(self, path: str, expected_status = 200) -> dict:
         try:
             response = self.session.get(self.endpoint + path)
