@@ -137,7 +137,7 @@ def handle_drove_response(response: requests.Response, expected_status: int):
                                 
     if api_response["status"] != "SUCCESS":
         raise DroveException(status_code, message = api_response.get("message", ""), raw=text, api_response=api_response)
-    return api_response["data"]
+    return api_response["data"] if "data" in api_response else api_response
 
 def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
     endpoint = args.endpoint
