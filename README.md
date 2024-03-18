@@ -187,6 +187,13 @@ $ drove -f custom.conf -c stage ...
 
 This will connect to the cluster whose config is mentioned in the `[stage]` config section.
 
+```
+$ drove -c stage ...
+```
+
+This will connect to the cluster whose config is mentioned in the `[stage]` config section in `$HOME/.drove` config file.
+
+
 ## Command line options
 Pass the endpoint and other options using `--endpoint|-e` etc etc. Options can be obtained using `-h` as mentioned above. Invocation will be in the form:
 
