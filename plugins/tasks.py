@@ -1,6 +1,7 @@
 import argparse
 import droveclient
 import droveutils
+import json
 import plugins
 
 from collections import OrderedDict
@@ -15,6 +16,15 @@ class Tasks(plugins.DrovePlugin):
         parser = subparser.add_parser("tasks", help="Drove task related commands")
 
         commands = parser.add_subparsers(help="Available commands for task management")
+
+        sub_parser = commands.add_parser("create", help="Spawn a new task on cluster")
+        sub_parser.add_argument("spec_file", metavar="spec-file", help="JSON spec file for the application")
+        sub_parser.set_defaults(func=self.create_task)
+
+        sub_parser = commands.add_parser("kill", help="Kill a running task")
+        sub_parser.add_argument("source_app_name", metavar="source-app-name", help="Source app name as specified in spec")
+        sub_parser.add_argument("task_id", metavar="task-id", help="ID of the task as specified in the spec")
+        sub_parser.set_defaults(func=self.kill_task)
 
         sub_parser = commands.add_parser("list", help="List all active tasks")
         sub_parser.add_argument("--app", "-a", help="Show tasks only for the given source app", type=str)
@@ -47,6 +57,38 @@ class Tasks(plugins.DrovePlugin):
         
         super().populate_options(drove_client, parser)
 
+    def create_task(self, options: SimpleNamespace):
+        try:
+            with open(options.spec_file, 'r') as fp:
+                spec = json.load(fp)
+            operation = {
+                "type": "CREATE",
+                "spec": spec,
+                "opSpec": {
+                   "timeout": "5m",
+                    "parallelism": 1,
+                    "failureStrategy": "STOP"
+                }
+            }
+            data = self.drove_client.post("/apis/v1/tasks/operations", operation)
+            print("Task created. Source App Name: {sourceAppName} Task ID: {taskId}. Drove assigned task ID: {internalTaskId}"
+                  .format(internalTaskId=data["taskId"], sourceAppName=spec["sourceAppName"], taskId=spec["taskId"]))
+        except (OSError, IOError) as e:
+            print("Error creating task. Error: " + str(e))
+
+    def kill_task(self, options: SimpleNamespace):
+        operation = {
+            "type": "KILL",
+            "sourceAppName" : options.source_app_name,
+            "taskId" : options.task_id,
+            "opSpec": {
+                "timeout": "5m",
+                "parallelism": 1,
+                "failureStrategy": "STOP"
+            }
+        }
+        data = self.drove_client.post("/apis/v1/tasks/operations", operation)
+        print("Task kill issued")
 
     def list_task(self, options: SimpleNamespace):
         data = self.drove_client.get('/apis/v1/tasks')
