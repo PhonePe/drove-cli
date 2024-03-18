@@ -8,7 +8,7 @@ from requests.adapters import HTTPAdapter, Retry
 from types import SimpleNamespace
 
 class TokenAuth(requests.auth.AuthBase):
-    def __init__(self, token: str):
+    def __init__(self, token: str, debug: bool = False):
         self.token = token
         super().__init__()
 
@@ -17,7 +17,7 @@ class TokenAuth(requests.auth.AuthBase):
         return r
 
 class DroveException(Exception):
-    """Exception raised while callign drove endpoint"""
+    """Exception raised while calling drove endpoint"""
 
     def __init__(self, status_code: int, message: str, raw: str = None, api_response: dict = None):
         self.status_code = status_code
@@ -136,8 +136,11 @@ def handle_drove_response(response: requests.Response, expected_status: int):
     if api_response == None:
         raise DroveException(status_code, "Drove call failed with status code: {code}".format(code=status_code))
                                 
-    if api_response["status"] != "SUCCESS":
-        raise DroveException(status_code, message = api_response.get("message", ""), raw=text, api_response=api_response)
+    if "status" in api_response:
+        if api_response["status"] != "SUCCESS":
+            raise DroveException(status_code, message = api_response.get("message", ""), raw=text, api_response=api_response)
+    else:
+        raise DroveException(status_code, text)
     return api_response["data"] if "data" in api_response else api_response
 
 def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
@@ -179,6 +182,7 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
     # At least endpoint is needed
     if endpoint == None:
         raise Exception("Error: provide config file or required command line params for drove connectivity\n")
+    endpoint = endpoint[:-1] if endpoint.endswith('/') else endpoint
     if args.debug:
         print('Endpoint: {endpoint} Username: {has_username} Password: {has_password} AuthHeader: {has_auth_header} Insecure: {insecure}'
               .format(endpoint=endpoint, has_username=username is not None, has_password=password is not None,

@@ -53,27 +53,34 @@ To see basic help:
 
 $ drove -h
 
-usage: drove [-h] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--config CONFIG] {cluster,tasks,appinstances,executor,apps} ...
+usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
+             {executor,cluster,apps,appinstances,tasks} ...
 
 positional arguments:
-  {cluster,tasks,appinstances,executor,apps}
+  {executor,cluster,apps,appinstances,tasks}
                         Available plugins
-    cluster             Drove cluster related commands
-    tasks               Drove task related commands
-    appinstances        Drove application instance related commands
     executor            Drove cluster executor related commands
+    cluster             Drove cluster related commands
     apps                Drove application related commands
+    appinstances        Drove application instance related commands
+    tasks               Drove task related commands
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
+  --file FILE, -f FILE  Configuration file for drove client
+  --cluster CLUSTER, -c CLUSTER
+                        Cluster name as specified in config file
   --endpoint ENDPOINT, -e ENDPOINT
                         Drove endpoint. (For example: https://drove.test.com)
   --auth-header AUTH_HEADER, -t AUTH_HEADER
                         Authorization header value for the provided drove endpoint
   --insecure INSECURE, -i INSECURE
                         Do not verify SSL cert for server
-  --config CONFIG, -c CONFIG
-                        Configuration file for drove client
+  --username USERNAME, -u USERNAME
+                        Drove cluster username
+  --password PASSWORD, -p PASSWORD
+                        Drove cluster password
+  --debug, -d           Print details of errors
 
 ```
 
@@ -117,11 +124,42 @@ In order to use the CLI, we need to provide coordinates to the cluster to connec
 ## Drove CLI config file
 The config file can be located in the following paths:
 * `.drove` file in your home directory (Typically used for the default cluster you frequently connect to)
-*  A file in any path that can be passed as a parameter to the CLI with the `-c CONFIG` option
+*  A file in any path that can be passed as a parameter to the CLI with the `-f FILE` option
 
-File format:
+### Config File format
+This file is in ini format and is arranged in sections.
+
+```ini
+[DEFAULT]
+...
+stage_token = <token1>
+prod_token = <token2>
+
+[local]
+endpoint = http://localhost:10000
+username = admin
+password = admin
+
+[stage]
+endpoint = https://stage.testdrove.io
+auth_header = %(stage_token)s
+
+[production]
+endpoint = https://prod.testdrove.io
+auth_header = %(prod_token)s
+
+..
 ```
-endpoint = https://yourcluster.yourdomain.com
+
+The `DEFAULT` section can be used to define common variables like Insecure etc. The `local`, `stage`, `production` etc are names for inidividual clusters and these sections can be used to define configuration for individual clusters. Cluster name is referred to in the command line by using the `-c` command line option.\
+*Interpolation* of values is supported and can be acieved by using `%(variable_name)s` references.
+
+> * Note: The `DEFAULT` section is mandatory
+> * Note: The `s` at the end of `%(var)s` is mandatory for interpolation
+
+### Contents of a Section
+```
+endpoint = https://yourcluster.yourdomain.com # Endpoint for cluster
 insecure = true
 username = <your_username>
 password = <your_password>
@@ -135,11 +173,19 @@ Authentication priority:
 
 > NOTE: Use the `insecure` option to skip certificate checks on the server endpoint (comes in handy for internal domains)
 
-To use a cusom config file, invoke drove in the following form:
+To use a custom config file, invoke drove in the following form:
 
 ```
-$ drove -c custom.conf ...
+$ drove -f custom.conf ...
 ```
+
+This will connect to the cluster if an endpoint is mentioned in the `DEFAULT` section.
+
+```
+$ drove -f custom.conf -c stage ...
+```
+
+This will connect to the cluster whose config is mentioned in the `[stage]` config section.
 
 ## Command line options
 Pass the endpoint and other options using `--endpoint|-e` etc etc. Options can be obtained using `-h` as mentioned above. Invocation will be in the form:
@@ -152,24 +198,30 @@ $ drove -e http://localhost:10000 -u guest -p guest ...
 The following cli format is followed:
 
 ```
-drove [-h] [--config CONFIG] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug] {executor,cluster,apps,appinstances,tasks} ...
+usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
+             {executor,cluster,apps,appinstances,tasks} ...
+```
+### Basic Arguments
 ```
 
-### Basic Arguments
+options:
+  -h, --help            show this help message and exit
+  --file FILE, -f FILE  Configuration file for drove client
+  --cluster CLUSTER, -c CLUSTER
+                        Cluster name as specified in config file
+  --endpoint ENDPOINT, -e ENDPOINT
+                        Drove endpoint. (For example: https://drove.test.com)
+  --auth-header AUTH_HEADER, -t AUTH_HEADER
+                        Authorization header value for the provided drove endpoint
+  --insecure INSECURE, -i INSECURE
+                        Do not verify SSL cert for server
+  --username USERNAME, -u USERNAME
+                        Drove cluster username
+  --password PASSWORD, -p PASSWORD
+                        Drove cluster password
+  --debug, -d           Print details of errors
 
-        --config CONFIG, -c CONFIG
-                        Configuration file for drove client
-        --endpoint ENDPOINT, -e ENDPOINT
-                        Drove endpoint. (For example: https:drove.test.com) (Config option: endpoint)
-        --auth-header AUTH_HEADER, -t AUTH_HEADER
-                        Authorization header value for the provided drove endpoint (Config option: auth_header)
-        --insecure INSECURE, -i INSECURE
-                        Do not verify SSL cert for server (Config option: insecure)
-        --username USERNAME, -u USERNAME
-                        Drove cluster username (Config option: username)
-        --password PASSWORD, -p PASSWORD
-                        Drove cluster password  (Config option: password)
-        --debug, -d           Print details of errors
+```
 
 ## Commands
 Commands in drove are meant to address specific functionality. They can be summarized as follows:
@@ -592,7 +644,7 @@ drove appinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app
 ---
 Drove task related commands
 ```
-drove tasks [-h] {list,show,logs,tail,download} ...
+drove tasks [-h] {create,kill,list,show,logs,tail,download} ...
 ```
 #### Sub-commands
 
