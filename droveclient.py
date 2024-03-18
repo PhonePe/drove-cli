@@ -1,4 +1,3 @@
-import argparse
 import configparser
 import json
 import os
@@ -126,6 +125,8 @@ def handle_drove_response(response: requests.Response, expected_status: int):
     try:
         if text != None and response.json() != None:
             api_response = response.json()
+    except json.decoder.JSONDecodeError:
+        raise DroveException(status_code, text)
     except Exception as e:
         raise DroveException(status_code, str(e))
     if status_code != expected_status:
@@ -146,21 +147,24 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
     username = args.username
     password = args.password
 
-    # If cmdl options are not passed, see if config file is passed
     if endpoint is None:
-        config_file = args.config
+        # If cmdl options are not passed, see if config file is passed
         # If config file path is not passed, see if .drove exists in home and use that
-        if config_file == None:
-            config_file = str(Path.home()) + "/.drove"
-        
-        # Try to parse config if it exists
-        if os.path.isfile(config_file):
+        config_file = args.file if args.file is not None else str(Path.home()) + "/.drove"
+        # Try to parse config if it exists and is readable
+        if os.path.isfile(config_file) and os.access(config_file, os.R_OK):
             config_parser = configparser.ConfigParser()
             try:
                 with open(config_file) as stream:
-                    config_parser.read_string("[drove]\n" + stream.read())
-                drove_config = config_parser["drove"]
-                endpoint = drove_config["endpoint"]
+                    config_parser.read_string(stream.read())
+                drove_config = config_parser['DEFAULT']
+                if args.cluster is not None:
+                    if args.cluster in config_parser:
+                        drove_config = config_parser[args.cluster]
+                    else:
+                        print("error: No cluster definition found for {cluster} in config {config_file}".format(config_file=config_file, cluster=args.cluster))
+                        return None
+                endpoint = drove_config.get("endpoint")
                 username = drove_config.get("username")
                 password = drove_config.get("password")
                 auth_header = drove_config.get("auth_header", None)
@@ -169,11 +173,16 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
                 #Looks like some random file was passed. Bail out
                 print("Error parsing config file " + config_file + ": " + str(e))
                 return None
-
+        else:
+            print("Error: Config file {config_file} is not present or readable".format(config_file=config_file))
+            return None
     # At least endpoint is needed
     if endpoint == None:
-        raise Exception("error: provide config file or required command line params for drove connectivity\n")
-        return None
+        raise Exception("Error: provide config file or required command line params for drove connectivity\n")
+    if args.debug:
+        print('Endpoint: {endpoint} Username: {has_username} Password: {has_password} AuthHeader: {has_auth_header} Insecure: {insecure}'
+              .format(endpoint=endpoint, has_username=username is not None, has_password=password is not None,
+                       has_auth_header=auth_header is not None, insecure=insecure))
     drove_client.start(endpoint, auth_header, username, password, insecure)
     return drove_client
     
