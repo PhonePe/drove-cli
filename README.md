@@ -596,6 +596,27 @@ drove tasks [-h] {list,show,logs,tail,download} ...
 ```
 #### Sub-commands
 
+##### create
+
+Create a task on cluster
+```
+drove tasks create [-h] spec-file
+```
+###### Positional Arguments
+
+`spec-file` - JSON spec file for the task
+
+##### kill
+
+Kill a running task
+```
+drove tasks kill [-h] source-app-name task-id
+```
+###### Positional Arguments
+
+`source-app-name` - Source app name as specified in spec\
+`task-id` - ID of the task as specified in the spec
+
 ##### list
 
 List all active tasks
