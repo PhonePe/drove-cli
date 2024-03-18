@@ -210,8 +210,6 @@ usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--aut
 ```
 ### Basic Arguments
 ```
-
-options:
   -h, --help            show this help message and exit
   --file FILE, -f FILE  Configuration file for drove client
   --cluster CLUSTER, -c CLUSTER
