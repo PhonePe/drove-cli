@@ -1,0 +1,26 @@
+{
+    "sourceAppName": "TEST_APP",
+    "taskId": "T0012",
+    "executable": {
+        "url": "docker.io/santanusinha/test-task:0.3",
+        "dockerPullTimeout": "100 seconds",
+        "type": "DOCKER"
+    },
+    "volumes": [],
+    "resources": [
+        {
+            "type": "CPU",
+            "count": 1
+        },
+        {
+            "type": "MEMORY",
+            "sizeInMB": 512
+        }
+    ],
+    "env": {
+        "ITERATIONS" : "10000"
+    },
+    "placementPolicy": {
+        "type": "ANY"
+    }
+}
