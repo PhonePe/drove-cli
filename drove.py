@@ -10,7 +10,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(prog="drove")
 
-    parser.add_argument("--config", "-c", help="Configuration file for drove client")
+    parser.add_argument("--file", "-f", help="Configuration file for drove client")
+    parser.add_argument("--cluster", "-c", help="Cluster name as specified in config file")
     parser.add_argument("--endpoint", "-e", help="Drove endpoint. (For example: https://drove.test.com)")
     parser.add_argument("--auth-header", "-t", dest="auth_header", help="Authorization header value for the provided drove endpoint")
     parser.add_argument("--insecure", "-i", help="Do not verify SSL cert for server")
@@ -42,7 +43,11 @@ def run():
 
     except Exception as e:
         print("Drove CLI error: " + str(e))
-        parser.print_help()
+        debug = True if client != None and client.debug else False
+        if debug:
+            traceback.print_exc()
+        else:
+            parser.print_help()
 
 if __name__ == '__main__':
     run()
