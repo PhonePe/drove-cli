@@ -8,7 +8,7 @@ from requests.adapters import HTTPAdapter, Retry
 from types import SimpleNamespace
 
 class TokenAuth(requests.auth.AuthBase):
-    def __init__(self, token: str, debug: bool = False):
+    def __init__(self, token: str):
         self.token = token
         super().__init__()
 
