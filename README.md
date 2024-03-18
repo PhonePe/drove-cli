@@ -388,7 +388,7 @@ drove apps deploy [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id in
 ```
 ###### Positional Arguments
 
-`app-id` - Application ID
+`app-id` - Application ID\
 `instances` - Number of new instances to be created
 
 ###### Named Arguments
@@ -409,7 +409,7 @@ drove apps scale [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id ins
 ```
 ###### Positional Arguments
 
-`app-id` - Application ID
+`app-id` - Application ID\
 `instances` - Number of instances. Setting this to 0 will suspend the app
 
 ###### Named Arguments
@@ -503,7 +503,7 @@ Print details for an application instance
 drove appinstances info [-h] app-id instance-id
 ```
 ###### Positional Arguments
-`app-id` - Application ID
+`app-id` - Application ID\
 `instance-id` - Application Instance ID
 
 ##### logs
@@ -514,7 +514,7 @@ drove appinstances logs [-h] app-id instance-id
 ```
 ###### Positional Arguments
 
-`app-id` - Application ID
+`app-id` - Application ID\
 `instance-id` - Application Instance ID
 
 ##### tail
@@ -525,7 +525,7 @@ drove appinstances tail [-h] [--file FILE] app-id instance-id
 ```
 ###### Positional Arguments
 
-`app-id` - Application ID
+`app-id` - Application ID\
 `instance-id` - Application Instance ID
 
 ###### Named Arguments
@@ -542,8 +542,8 @@ drove appinstances download [-h] [--out OUT] app-id instance-id file
 ```
 ###### Positional Arguments
 
-`app-id` - Application ID
-`instance-id` - Application Instance ID
+`app-id` - Application ID\
+`instance-id` - Application Instance ID\
 `file` - Log filename to download
 
 ###### Named Arguments
@@ -557,7 +557,7 @@ Replace specific app instances with fresh instances
 drove appinstances replace [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id instance-id [instance-id ...]
 ```
 ###### Positional Arguments
-`app-id` - Application ID
+`app-id` - Application ID\
 `instance-id` - Application Instance IDs
 
 ###### Named Arguments
@@ -576,7 +576,7 @@ Kill specific app instances
 drove appinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id instance-id [instance-id ...]
 ```
 ###### Positional Arguments
-`app-id` - Application ID
+`app-id` - Application ID\
 `instance-id` - Application Instance IDs
 
 ###### Named Arguments
@@ -595,6 +595,27 @@ Drove task related commands
 drove tasks [-h] {list,show,logs,tail,download} ...
 ```
 #### Sub-commands
+
+##### create
+
+Create a task on cluster
+```
+drove tasks create [-h] spec-file
+```
+###### Positional Arguments
+
+`spec-file` - JSON spec file for the task
+
+##### kill
+
+Kill a running task
+```
+drove tasks kill [-h] source-app-name task-id
+```
+###### Positional Arguments
+
+`source-app-name` - Source app name as specified in spec\
+`task-id` - ID of the task as specified in the spec
 
 ##### list
 
@@ -616,7 +637,7 @@ Shows details about a task
 drove tasks show [-h] source-app task-id
 ```
 ###### Positional Arguments
-`source-app` - Name of the Drove application that started the task
+`source-app` - Name of the Drove application that started the task\
 `task-id` - Task ID
 
 ##### logs
@@ -626,7 +647,7 @@ Print list of logs for task
 drove tasks logs [-h] source-app task-id
 ```
 ###### Positional Arguments
-`source-app` - Name of the Drove application that started the task
+`source-app` - Name of the Drove application that started the task\
 `task-id` - Task ID
 
 ##### tail
@@ -636,7 +657,7 @@ Tail log for task
 drove tasks tail [-h] [--file FILE] source-app task-id
 ```
 ###### Positional Arguments
-`source-app` - Name of the Drove application that started the task
+`source-app` - Name of the Drove application that started the task\
 `task-id` - Task ID
 
 ###### Named Arguments
@@ -652,8 +673,8 @@ Download log for task
 drove tasks download [-h] [--out OUT] source-app task-id file
 ```
 ###### Positional Arguments
-`source-app` - Name of the Drove application that started the task
-`task-id` - Task ID
+`source-app` - Name of the Drove application that started the task\
+`task-id` - Task ID\
 `file` - Log filename to download
 
 ###### Named Arguments
