@@ -588,7 +588,7 @@ drove appinstances tail [-h] [--file FILE] app-id instance-id
 ###### Named Arguments
 
 ```
-  --file FILE, -f FILE  Log filename to tail. Default is to tail output.log
+  --log LOG, -l LOG  Log filename to tail. Default is to tail output.log
 ```
 
 ##### download
