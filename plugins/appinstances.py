@@ -37,7 +37,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser = commands.add_parser("tail", help="Tail log for application instance")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.add_argument("instance_id", metavar="instance-id", help="Application Instance ID")
-        sub_parser.add_argument("--file", "-f", default = "output.log", help="Log filename to tail. Default is to tail output.log")
+        sub_parser.add_argument("--log", "-l", default = "output.log", help="Log filename to tail. Default is to tail output.log")
         sub_parser.set_defaults(func=self.log_tail)
 
         sub_parser = commands.add_parser("download", help="Download log for application instance")
@@ -115,7 +115,7 @@ class Applications(plugins.DrovePlugin):
         droveutils.list_logs(self.drove_client, "applications", options.app_id, options.instance_id)
 
     def log_tail(self, options):
-        droveutils.tail_log(self.drove_client, "applications", options.app_id, options.instance_id, options.file)
+        droveutils.tail_log(self.drove_client, "applications", options.app_id, options.instance_id, options.log)
         
     def log_download(self, options):
         filename = options.file
