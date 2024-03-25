@@ -1,10 +1,20 @@
 [tool.poetry]
-name = "com.phonepe.infra.drove_cli"
+name = "drove-cli"
 version = "1.0.4a0"
 description = "Drove Command Line Interface"
-authors = ["infra-dev <infra-dev@phonepe.com>"]
+authors = ["Santanu Sinha <santanu.sinha@gmail.com>"]
 readme = "README.md"
 packages = [{include = "plugins"}, {include = "*.py"}]
+license = "Apache-2.0"
+repository = "https://github.com/PhonePe/drove-cli"
+keywords = ["container", "docker", "podman", "distributed-systems", "container-orchestrator"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Topic :: System :: Clustering",
+    "Topic :: System :: Distributed Computing"
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
