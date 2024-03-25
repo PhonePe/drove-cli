@@ -6,7 +6,7 @@ Command line interface for the Drove Container Orchestrator.
 
 ## Installation
 
-You can isntall the cli from from PyPI.
+You can install the cli from from PyPI.
 
 ```bash
 pip install drove-cli
