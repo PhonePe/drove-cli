@@ -3,6 +3,10 @@ name = "drove-cli"
 version = "1.0.4a0"
 description = "Drove Command Line Interface"
 authors = ["Santanu Sinha <santanu.sinha@gmail.com>"]
+maintainers = [
+    "Santanu Sinha <santanu.sinha@gmail.com>",
+    "Santanu Sinha <santanu@phonepe.com>",
+]
 readme = "README.md"
 packages = [{include = "plugins"}, {include = "*.py"}]
 license = "Apache-2.0"
