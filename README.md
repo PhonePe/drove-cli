@@ -15,33 +15,41 @@ pip install drove-cli
 Reactivate/deactivate virtual environment based on the need to utilize drove cli.
 
 ## Running using docker
-The cli is pushed as a docker for easy access.
+The cli is pushed as a docker for easy access. This also elimintates the need for having python etc setup on your system.
 
-Pull the image:
+1) Pull the image:
 ```shell
 docker pull quay.io/santanu_sinha/drove-cli:latest
 ```
 
-Create the container (this also includes mapping your local drove config to .drove in the container):
+2) Create a shell script called `drove` with the following content:
 
 ```shell
-docker run --rm --name drove-cli -v /<PATH TO YOUR CONFIG>/drove.cnf:/root/.drove:ro  quay.io/santanu_sinha/drove-cli:latest <options etc>
+#! /bin/sh
+docker run \
+    --rm --interactive --tty --network host \
+    --name drove-cli -v ${HOME}/.drove:/root/.drove:ro  \
+    quay.io/santanu_sinha/drove-cli:latest "$@"
+
 ```
 
-Setup alias
+3) Make the script executable
 ```shell
-alias drove="docker start drove-cli"
+chmod a+x drove
 ```
 
-> Put this in your `~/.bashrc` for the alias to be automatically setup during login.
+4) Put the path to this script in your `~/.bashrc`.
 
-Run drove cli
+```shell
+export PATH="${PATH}:/path/to/your/script"
+```
+
+5) Logout/login or run `. ~/.bashrc` to load the new [path]
+
+
+6) Run drove cli
 ```
 drove -h
-```
-
-For easy access you can run setup an alias to the above command.
-```shell
 ```
 
 ## Requirements
