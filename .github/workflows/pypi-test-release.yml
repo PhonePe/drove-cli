@@ -1,0 +1,20 @@
+name: Build and publish python package to test pypi
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:        
+      - 'releases/*'           # Push events to every tag not containing /
+
+jobs:
+  publish-service-client-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish PyPi package
+        uses: code-specialist/pypi-poetry-publish@v1
+        with:
+          PACKAGE_DIRECTORY: "./example-package/"
+          PYTHON_VERSION: "3.10"
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          PUBLISH_REGISTRY_PASSWORD: ${{ secrets.PUBLISH_REGISTRY_PASSWORD }}
+          PUBLISH_REGISTRY: "https://test.pypi.org/legacy/"
