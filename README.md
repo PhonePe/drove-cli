@@ -19,7 +19,7 @@ The cli is pushed as a docker for easy access. This also elimintates the need fo
 
 1) Pull the image:
 ```shell
-docker pull ghcr.io/PhonePe/drove-cli:latest
+docker pull ghcr.io/phonepe/drove-cli:latest
 ```
 
 2) Create a shell script called `drove` with the following content:
@@ -29,7 +29,7 @@ docker pull ghcr.io/PhonePe/drove-cli:latest
 docker run \
     --rm --interactive --tty --network host \
     --name drove-cli -v ${HOME}/.drove:/root/.drove:ro  \
-    ghcr.io/PhonePe/drove-cli:latest "$@"
+    ghcr.io/phonepe/drove-cli:latest "$@"
 
 ```
 
