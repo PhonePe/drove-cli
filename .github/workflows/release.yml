@@ -1,9 +1,9 @@
 name: Release container on tagging
 on:
-  push:
-    # Pattern matched against refs/tags
-    tags:        
-      - 'releases/*'           # Push events to every tag not containing /
+    push:
+      # Pattern matched against refs/tags
+      tags:        
+        - '*'           # Push events to every tag not containing /
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
