@@ -2,7 +2,7 @@
     "sourceAppName": "TEST_APP",
     "taskId": "T0012",
     "executable": {
-        "url": "docker.io/santanusinha/test-task:0.3",
+        "url": "ghcr.io/appform-io/test-task",
         "dockerPullTimeout": "100 seconds",
         "type": "DOCKER"
     },
@@ -18,7 +18,7 @@
         }
     ],
     "env": {
-        "ITERATIONS" : "10000"
+        "ITERATIONS" : "10"
     },
     "placementPolicy": {
         "type": "ANY"
