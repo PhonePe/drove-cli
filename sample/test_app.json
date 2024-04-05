@@ -4,7 +4,7 @@
         "type": "SERVICE",
         "executable": {
             "type": "DOCKER",
-            "url": "docker.io/santanusinha/perf-test-server:0.7-stable",
+            "url": "ghcr.io/appform-io/perf-test-server-httplib",
             "dockerPullTimeout": "100 seconds"
         },
         "exposedPorts": [

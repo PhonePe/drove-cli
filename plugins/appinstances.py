@@ -43,7 +43,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser = commands.add_parser("download", help="Download log for application instance")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.add_argument("instance_id", metavar="instance-id", help="Application Instance ID")
-        sub_parser.add_argument("file", help="Log filename to download")
+        sub_parser.add_argument("applogfile", help="Log filename to download")
         sub_parser.add_argument("--out", "-o", help="Filename to download to. Default is the same filename as provided.")
         sub_parser.set_defaults(func=self.log_download)
 
@@ -118,10 +118,10 @@ class Applications(plugins.DrovePlugin):
         droveutils.tail_log(self.drove_client, "applications", options.app_id, options.instance_id, options.log)
         
     def log_download(self, options):
-        filename = options.file
+        filename = options.applogfile
         if options.out and len(options.out) > 0:
             filename = options.out
-        droveutils.download_log(self.drove_client, "applications", options.app_id, options.instance_id, options.file, filename)
+        droveutils.download_log(self.drove_client, "applications", options.app_id, options.instance_id, options.applogfile, filename)
 
     def replace(self, options):
         operation = {
