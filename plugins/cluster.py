@@ -38,12 +38,11 @@ class Cluster(plugins.DrovePlugin):
         sub_parser.add_argument("--textfmt", "-s", help="Use the format string to print message", type=str, default="{type: <25} | {id: <36} | {time: <20} | {metadata}")
         sub_parser.set_defaults(func=self.handle_events)
 
+        maintenance_parser = commands.add_parser("maintenance-on", help="Set cluster to maintenance mode")
+        maintenance_parser.set_defaults(func=self.set_maintenance)
 
-        # maintenance_parser = commands.add_parser("maintenance-on", help="Set cluster to maintenance mode")
-        # maintenance_parser.set_defaults(func=self.set_maintenance)
-
-        # maintenance_parser = commands.add_parser("maintenance-off", help="Removed maintenance mode on cluster")
-        # maintenance_parser.set_defaults(func=self.unset_maintenance)
+        maintenance_parser = commands.add_parser("maintenance-off", help="Removed maintenance mode on cluster")
+        maintenance_parser.set_defaults(func=self.unset_maintenance)
 
         # executors_command = commands.add_parser("executors", help="List executors")
         # executors_command.add_argument("--list", "-l", help="List executors", action="store_true")
@@ -101,10 +100,24 @@ class Cluster(plugins.DrovePlugin):
             time.sleep(1)
 
     def set_maintenance(self, options: SimpleNamespace):
-        print("Maintenance mode set")
+        try:
+            response = self.drove_client.post("/apis/v1/cluster/maintenance/set", body={})
+            print("Cluster state: {state}".format(state=response['state']))
+        except droveclient.DroveException as e:
+            print("Error setting drove cluster to maintenance mode: status: {status} message: {message} raw: {raw}"
+                  .format(status = e.status_code, message = str(e), raw = e.raw))
+        except Exception as e:
+            print("Error setting drove cluster to maintenance mode: " + str(e))
     
     def unset_maintenance(self, options: SimpleNamespace):
-        print("Maintenance mode unset")
+        try:
+            self.drove_client.post("/apis/v1/cluster/maintenance/unset", body={})
+            print("Maintenance mode removal accepted. Not that cluster will be in maintenance mode for an addition few minutes");
+        except droveclient.DroveException as e:
+            print("Error setting drove cluster to normal mode: status: {status} message: {message} raw: {raw}"
+                  .format(status = e.status_code, message = str(e), raw = e.raw))
+        except Exception as e:
+            print("Error setting drove cluster to normal mode: " + str(e))
 
     def convert_event(self, format: str, event: dict) -> str:
         data = dict()
