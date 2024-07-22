@@ -2,11 +2,10 @@ import argparse
 from operator import itemgetter
 import droveclient
 import droveutils
-import json
 import plugins
-import time
 
 from types import SimpleNamespace
+from urllib.parse import urlencode
 
 class Executors(plugins.DrovePlugin):
     def __init__(self) -> None:
@@ -36,6 +35,14 @@ class Executors(plugins.DrovePlugin):
         sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 6), default = 1)
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.show_tasks)
+
+        sub_parser = commands.add_parser("blacklist", help="Blacklist executors")
+        sub_parser.add_argument("executor_ids", nargs="+", metavar="executor-id", help="Executor IDs")
+        sub_parser.set_defaults(func=self.blacklist)
+
+        sub_parser = commands.add_parser("unblacklist", help="Un-blacklist executors")
+        sub_parser.add_argument("executor_ids", nargs="+", metavar="executor-id", help="Executor IDs")
+        sub_parser.set_defaults(func=self.unblacklist)
 
         super().populate_options(drove_client, parser)
 
@@ -127,3 +134,30 @@ class Executors(plugins.DrovePlugin):
         task_rows = sorted(task_rows, key=itemgetter(options.sort), reverse=options.reverse)
         headers = ["Id", "Source App", "Task ID", "State", "CPU", "Memory(MB)", "Created", "Updated"]
         droveutils.print_table(headers, task_rows)
+
+
+    def blacklist(self, options: SimpleNamespace):
+        try:
+            response = self.drove_client.post("/apis/v1/cluster/executors/blacklist", params={'id' : options.executor_ids}, body={})
+            successful = response["successful"]
+            failed = response["failed"]
+            print("Successful: " + ",".join(successful))
+            print("Failed: " + ",".join(failed))
+        except droveclient.DroveException as e:
+            print("Error blacklisting: status: {status} message: {message} raw: {raw}"
+                  .format(status = e.status_code, message = str(e), raw = e.raw))
+        except Exception as e:
+            print("Error blacklisting: " + str(e))
+
+    def unblacklist(self, options: SimpleNamespace):
+        try:
+            response = self.drove_client.post("/apis/v1/cluster/executors/unblacklist", params={'id' : options.executor_ids}, body={})
+            successful = response["successful"]
+            failed = response["failed"]
+            print("Successful: " + ",".join(successful))
+            print("Failed: " + ",".join(failed))
+        except droveclient.DroveException as e:
+            print("Error un-blacklisting: status: {status} message: {message} raw: {raw}"
+                  .format(status = e.status_code, message = str(e), raw = e.raw))
+        except Exception as e:
+            print("Error un-blacklisting: " + str(e))    

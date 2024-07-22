@@ -48,7 +48,7 @@ export PATH="${PATH}:/path/to/your/script"
 
 
 6) Run drove cli
-```
+```shell
 drove -h
 ```
 
@@ -98,18 +98,20 @@ options:
 To see documentation for a command/section:
 ```
 $ drove cluster -h
-usage: drove cluster [-h] {ping,summary,leader,endpoints,events} ...
+usage: drove cluster [-h] {ping,summary,leader,endpoints,events,maintenance-on,maintenance-off} ...
 
 positional arguments:
-  {ping,summary,leader,endpoints,events}
+  {ping,summary,leader,endpoints,events,maintenance-on,maintenance-off}
                         Available commands for cluster management
     ping                Ping the cluster
     summary             Show cluster summary
     leader              Show leader for cluster
     endpoints           Show all exposed endpoints
     events              Events on the cluster
+    maintenance-on      Set cluster to maintenance mode
+    maintenance-off     Removed maintenance mode on cluster
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
 ```
 
@@ -242,17 +244,18 @@ usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--aut
 ## Commands
 Commands in drove are meant to address specific functionality. They can be summarized as follows:
 ```
-    executor            Drove cluster executor related commands
-    cluster             Drove cluster related commands
-    apps                Drove application related commands
-    appinstances        Drove application instance related commands
-    tasks               Drove task related commands
+    list                List all executors
+    info                Show details about executor
+    appinstances        Show app instances running on this executor
+    tasks               Show tasks running on this executor
+    blacklist           Blacklist executors
+    unblacklist         Un-blacklist executors
 ```
 ### executor
 ---
 Drove cluster executor related commands
 
-```
+```shell
 drove executor [-h] {list,info,appinstances,tasks} ...
 ```
 
@@ -262,7 +265,7 @@ drove executor [-h] {list,info,appinstances,tasks} ...
 
 List all executors
 
-```
+```shell
 drove executor list [-h]
 ```
 
@@ -270,7 +273,7 @@ drove executor list [-h]
 
 Show details about executor
 
-```
+```shell
 drove executor info [-h] executor-id
 ```
 
@@ -282,7 +285,7 @@ drove executor info [-h] executor-id
 
 Show app instances running on this executor
 
-```
+```shell
 drove executor appinstances [-h] [--sort {0,1,2,3,4,5}] [--reverse] executor-id
 ```
 ###### Positional Arguments
@@ -301,7 +304,7 @@ drove executor appinstances [-h] [--sort {0,1,2,3,4,5}] [--reverse] executor-id
 
 Show tasks running on this executor
 
-```
+```shell
 drove executor tasks [-h] [--sort {0,1,2,3,4,5}] [--reverse] executor-id
 ```
 
@@ -316,12 +319,35 @@ drove executor tasks [-h] [--sort {0,1,2,3,4,5}] [--reverse] executor-id
   --reverse, -r         Sort in reverse order
 ```
 
+##### blacklist
+
+Take executors out of rotation.
+
+```shell
+drove executor blacklist executor-id [executor-id ...]
+```
+
+###### Positional Arguments
+
+`executor-id` - List of executor ids to be blacklisted. At least one is mandatory.
+
+##### unblacklist
+
+Bring blacklisted executors back into rotation.
+
+```shell
+drove executor blacklist executor-id [executor-id ...]
+```
+
+###### Positional Arguments
+
+`executor-id` - List of executor ids to be blacklisted. At least one is mandatory.
 
 ### cluster
 ---
 Drove cluster related commands
 
-```
+```shell
 drove cluster [-h] {ping,summary,leader,endpoints,events} ...
 ```
 
@@ -331,7 +357,7 @@ drove cluster [-h] {ping,summary,leader,endpoints,events} ...
 
 Ping the cluster
 
-```
+```shell
 drove cluster ping [-h]
 ```
 
@@ -339,20 +365,20 @@ drove cluster ping [-h]
 
 Show cluster summary
 
-```
+```shell
 drove cluster summary [-h]
 ```
 
 ##### leader
 
 Show leader for cluster
-```
+```shell
 drove cluster leader [-h]
 ```
 ##### endpoints
 
 Show all exposed endpoints
-```
+```shell
 drove cluster endpoints [-h] [--vhost VHOST]
 ```
 
@@ -367,7 +393,7 @@ drove cluster endpoints [-h] [--vhost VHOST]
 
 Events on the cluster
 
-```
+```shell
 drove cluster events [-h] [--follow] [--type TYPE] [--count COUNT] [--textfmt TEXTFMT]
 ```
 
@@ -382,12 +408,24 @@ drove cluster events [-h] [--follow] [--type TYPE] [--count COUNT] [--textfmt TE
                         Use the format string to print message
                         Default: “{type: <25} | {id: <36} | {time: <20} | {metadata}”
 ```
+##### maintenance-on
+Set cluster to maintenance mode.
+
+```shell
+drove cluster maintenance-on
+```
+##### maintenance-off
+Set cluster to normal mode.
+
+```shell
+drove cluster maintenance-off
+```
 
 ### apps
 ---
 Drove application related commands
 
-```
+```shell
 drove apps [-h] {list,summary,spec,create,destroy,deploy,scale,suspend,restart,cancelop} ...
 ```
 #### Sub-commands
@@ -396,7 +434,7 @@ drove apps [-h] {list,summary,spec,create,destroy,deploy,scale,suspend,restart,c
 
 List all applications
 
-```
+```shell
 drove apps list [-h] [--sort {0,1,2,3,4,5,6,7,8}] [--reverse]
 ```
 
@@ -411,7 +449,7 @@ drove apps list [-h] [--sort {0,1,2,3,4,5,6,7,8}] [--reverse]
 ##### summary
 
 Show a summary for an application
-```
+```shell
 drove apps summary [-h] app-id
 ```
 ###### Positional Arguments
@@ -421,7 +459,7 @@ drove apps summary [-h] app-id
 ##### spec
 
 Print the raw json spec for an application
-```
+```shell
 drove apps spec [-h] app-id
 ```
 ###### Positional Arguments
@@ -431,7 +469,7 @@ drove apps spec [-h] app-id
 ##### create
 
 Create application on cluster
-```
+```shell
 drove apps create [-h] spec-file
 ```
 ###### Positional Arguments
@@ -441,7 +479,7 @@ drove apps create [-h] spec-file
 ##### destroy
 
 Destroy an app with zero instances
-```
+```shell
 drove apps destroy [-h] app-id
 ```
 ###### Positional Arguments
@@ -451,7 +489,7 @@ drove apps destroy [-h] app-id
 ##### deploy
 
 Deploy new app instances.
-```
+```shell
 drove apps deploy [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id instances
 ```
 ###### Positional Arguments
@@ -472,7 +510,7 @@ drove apps deploy [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id in
 
 Scale app to required instances. Will increase or decrease instances on the cluster to match this number
 
-```
+```shell
 drove apps scale [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id instances
 ```
 ###### Positional Arguments
@@ -493,7 +531,7 @@ drove apps scale [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id ins
 ##### suspend
 
 Suspend the app
-```
+```shell
 drove apps suspend [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id
 ```
 ###### Positional Arguments[¶](#Positional%20Arguments_repeat9 "Link to this heading")
@@ -514,7 +552,7 @@ drove apps suspend [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id
 
 Restart am existing app instances.
 
-```
+```shell
 drove apps restart [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id
 ```
 
@@ -533,7 +571,7 @@ drove apps restart [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id
 ##### cancelop
 
 Cancel current operation
-```
+```shell
 drove apps cancelop [-h] app-id
 ```
 ###### Positional Arguments
@@ -542,7 +580,7 @@ drove apps cancelop [-h] app-id
 ### appinstances
 ---
 Drove application instance related commands
-```
+```shell
 drove appinstances [-h] {list,info,logs,tail,download,replace,kill} ...
 ```
 #### Sub-commands
@@ -550,7 +588,7 @@ drove appinstances [-h] {list,info,logs,tail,download,replace,kill} ...
 ##### list
 
 List all application instances
-```
+```shell
 drove appinstances list [-h] [--old] [--sort {0,1,2,3,4,5}] [--reverse] app-id
 ```
 ###### Positional Arguments
@@ -567,7 +605,7 @@ drove appinstances list [-h] [--old] [--sort {0,1,2,3,4,5}] [--reverse] app-id
 ##### info
 
 Print details for an application instance
-```
+```shell
 drove appinstances info [-h] app-id instance-id
 ```
 ###### Positional Arguments
@@ -577,7 +615,7 @@ drove appinstances info [-h] app-id instance-id
 ##### logs
 
 Print list of logs for application instance
-```
+```shell
 drove appinstances logs [-h] app-id instance-id
 ```
 ###### Positional Arguments
@@ -588,7 +626,7 @@ drove appinstances logs [-h] app-id instance-id
 ##### tail
 
 Tail log for application instance
-```
+```shell
 drove appinstances tail [-h] [--file FILE] app-id instance-id
 ```
 ###### Positional Arguments
@@ -605,7 +643,7 @@ drove appinstances tail [-h] [--file FILE] app-id instance-id
 ##### download
 
 Download log for application instance
-```
+```shell
 drove appinstances download [-h] [--out OUT] app-id instance-id file
 ```
 ###### Positional Arguments
@@ -621,7 +659,7 @@ drove appinstances download [-h] [--out OUT] app-id instance-id file
 ##### replace
 
 Replace specific app instances with fresh instances
-```
+```shell
 drove appinstances replace [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id instance-id [instance-id ...]
 ```
 ###### Positional Arguments
@@ -640,7 +678,7 @@ drove appinstances replace [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] 
 ##### kill
 
 Kill specific app instances
-```
+```shell
 drove appinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app-id instance-id [instance-id ...]
 ```
 ###### Positional Arguments
@@ -659,7 +697,7 @@ drove appinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] app
 ### tasks
 ---
 Drove task related commands
-```
+```shell
 drove tasks [-h] {create,kill,list,show,logs,tail,download} ...
 ```
 #### Sub-commands
@@ -667,7 +705,7 @@ drove tasks [-h] {create,kill,list,show,logs,tail,download} ...
 ##### create
 
 Create a task on cluster
-```
+```shell
 drove tasks create [-h] spec-file
 ```
 ###### Positional Arguments
@@ -677,7 +715,7 @@ drove tasks create [-h] spec-file
 ##### kill
 
 Kill a running task
-```
+```shell
 drove tasks kill [-h] source-app-name task-id
 ```
 ###### Positional Arguments
@@ -688,7 +726,7 @@ drove tasks kill [-h] source-app-name task-id
 ##### list
 
 List all active tasks
-```
+```shell
 drove tasks list [-h] [--app APP] [--sort {0,1,2,3,4,5,6,7,8}] [--reverse]
 ```
 ###### Named Arguments
@@ -701,7 +739,7 @@ drove tasks list [-h] [--app APP] [--sort {0,1,2,3,4,5,6,7,8}] [--reverse]
 ##### show
 
 Shows details about a task
-```
+```shell
 drove tasks show [-h] source-app task-id
 ```
 ###### Positional Arguments
@@ -711,7 +749,7 @@ drove tasks show [-h] source-app task-id
 ##### logs
 
 Print list of logs for task
-```
+```shell
 drove tasks logs [-h] source-app task-id
 ```
 ###### Positional Arguments
@@ -721,7 +759,7 @@ drove tasks logs [-h] source-app task-id
 ##### tail
 
 Tail log for task
-```
+```shell
 drove tasks tail [-h] [--file FILE] source-app task-id
 ```
 ###### Positional Arguments
@@ -737,7 +775,7 @@ drove tasks tail [-h] [--file FILE] source-app task-id
 
 Download log for task
 
-```
+```shell
 drove tasks download [-h] [--out OUT] source-app task-id file
 ```
 ###### Positional Arguments
