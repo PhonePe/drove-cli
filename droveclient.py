@@ -70,9 +70,9 @@ class DroveClient:
         return set(instances)
 
 
-    def get(self, path: str, expected_status = 200) -> dict:
+    def get(self, path: str, params = None, expected_status = 200) -> dict:
         try:
-            response = self.session.get(self.endpoint + path)
+            response = self.session.get(self.endpoint + path, params=params)
         except requests.ConnectionError as e:
             raise DroveException(-1, "Error connecting to endpoint " + self.endpoint, raw={})
         return handle_drove_response(response, expected_status)
@@ -111,9 +111,9 @@ class DroveClient:
         except Exception as e:
             raise DroveException(-1, str(e))
         
-    def post(self, path: str, body: dict,  parse=True, expected_status = 200) -> dict:
+    def post(self, path: str, body: dict,  params = None, parse=True, expected_status = 200) -> dict:
         try:
-            response = self.session.post(self.endpoint + path, json=body)
+            response = self.session.post(self.endpoint + path, json=body, params=params)
         except requests.ConnectionError as e:
             raise DroveException(-1, "Error connecting to endpoint " + self.endpoint, raw={})
         return handle_drove_response(response, expected_status)

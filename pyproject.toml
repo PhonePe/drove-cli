@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drove-cli"
-version = "0.0.1"
+version = "0.0.2"
 description = "Drove Command Line Interface"
 authors = ["Santanu Sinha <santanu.sinha@gmail.com>"]
 maintainers = [
