@@ -73,7 +73,9 @@
     },
     "tags": {
         "superSpecialApp": "yes_i_am",
-        "say_my_name": "heisenberg"
+        "say_my_name": "heisenberg",
+        "environment" : "dev",
+        "region" : "dc1"
     },
     "env": {
         "CORES": "8"
