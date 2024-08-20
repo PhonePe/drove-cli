@@ -6,7 +6,7 @@ Command line interface for the Drove Container Orchestrator.
 
 ## Installation
 
-You can install the cli from from PyPI.
+You can install the CLI from PyPI.
 
 ```bash
 pip install drove-cli
@@ -164,8 +164,8 @@ auth_header = %(prod_token)s
 ..
 ```
 
-The `DEFAULT` section can be used to define common variables like Insecure etc. The `local`, `stage`, `production` etc are names for inidividual clusters and these sections can be used to define configuration for individual clusters. Cluster name is referred to in the command line by using the `-c` command line option.\
-*Interpolation* of values is supported and can be acieved by using `%(variable_name)s` references.
+The `DEFAULT` section can be used to define common variables like Insecure etc. The `local`, `stage`, `production` etc are names for individual clusters and these sections can be used to define configuration for individual clusters. Cluster name is referred to in the command line by using the `-c` command line option.\
+*Interpolation* of values is supported and can be achieved by using `%(variable_name)s` references.
 
 > * Note: The `DEFAULT` section is mandatory
 > * Note: The `s` at the end of `%(var)s` is mandatory for interpolation
@@ -215,7 +215,7 @@ $ drove -e http://localhost:10000 -u guest -p guest ...
 ```
 
 ## CLI format
-The following cli format is followed:
+The following CLI format is followed:
 
 ```
 usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
