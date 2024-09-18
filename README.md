@@ -12,7 +12,7 @@ You can install the CLI from PyPI.
 pip install drove-cli
 ```
 
-### TO install in a virtual env
+### To install in a virtual env
 
 Create virtual environment
 ```bash
