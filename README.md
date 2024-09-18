@@ -12,10 +12,31 @@ You can install the CLI from PyPI.
 pip install drove-cli
 ```
 
-Reactivate/deactivate virtual environment based on the need to utilize drove cli.
+### TO install in a virtual env
+
+Create virtual environment
+```bash
+mkdir -p ${HOME}/venvs
+cd ${HOME}/venvs
+python3 -m venv drove_cli
+cd drove_cli
+source bin/activate
+pip install drove-cli
+```
+
+To activate in another shell:
+
+```bash
+source ${HOME}/venvs/drove_cli/bin/activate
+```
+
+To deactivate the venv (run when in activated environment):
+```bash
+deactivate
+```
 
 ## Running using docker
-The cli is pushed as a docker for easy access. This also elimintates the need for having python etc setup on your system.
+The cli is pushed as a docker for easy access. This also eliminates the need for having python etc setup on your system.
 
 1) Pull the image:
 ```shell
