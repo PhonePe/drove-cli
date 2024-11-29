@@ -357,12 +357,12 @@ drove executor blacklist executor-id [executor-id ...]
 Bring blacklisted executors back into rotation.
 
 ```shell
-drove executor blacklist executor-id [executor-id ...]
+drove executor unblacklist executor-id [executor-id ...]
 ```
 
 ###### Positional Arguments
 
-`executor-id` - List of executor ids to be blacklisted. At least one is mandatory.
+`executor-id` - List of executor ids to be brought in to the rotation. At least one is mandatory.
 
 ### cluster
 ---
