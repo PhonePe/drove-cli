@@ -921,6 +921,18 @@ drove localservices deactivate [-h] service-id
 
 `service-id` - Local Service ID
 
+##### update
+
+Deactivate a local service
+
+```shell
+drove localservices update [-h] service-id count
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+`count` - Number of instances per executor
+
 ##### restart
 
 Restart a local service.

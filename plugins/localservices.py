@@ -49,6 +49,11 @@ class LocalServices(plugins.DrovePlugin):
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.set_defaults(func=self.deactivate_service)
 
+        sub_parser = commands.add_parser("update", help="Update instances count per host for a local service")
+        sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
+        sub_parser.add_argument("count", metavar="count", help="Instance count per executor node", type=int, choices=range(1, 256))
+        sub_parser.set_defaults(func=self.update_count)
+
         sub_parser = commands.add_parser("restart", help="Restart a local service.")
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.add_argument("--stop", "-s", action='store_true', help="Stop current instance before spinning up new ones", default = False)
@@ -133,6 +138,15 @@ class LocalServices(plugins.DrovePlugin):
         data = self.drove_client.post("/apis/v1/localservices/operations", operation)
         print("Local service deactivated")
 
+    def update_count(self, options: SimpleNamespace):
+        operation = {
+            "type": "UPDATE_INSTANCE_COUNT",
+            "serviceId": options.service_id,
+            "instancesPerHost": options.count
+        }
+        data = self.drove_client.post("/apis/v1/localservices/operations", operation)
+        print("Local service instance count updated")
+    
     def restart_service(self, options: SimpleNamespace):
         operation = {
             "type": "RESTART",
