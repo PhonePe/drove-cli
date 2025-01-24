@@ -1,28 +1,32 @@
 import argparse
 import os
 import traceback
+from typing import List, Type
 
 from importlib import util
 from types import SimpleNamespace
 
 import droveclient
 
-class DrovePlugin:
-    plugins = []
-
+class DroveTool:
+    """Base class for all Drove tools"""
+    
+    tools: List[Type['DroveTool']] = []
+    
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.plugins.append(cls)
-
+        cls.tools.append(cls)
+    
     def __init__(self) -> None:
         self.drove_client: droveclient.DroveClient = None
         self.parser: argparse.ArgumentParser = None
+
         
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
         self.drove_client = drove_client
         subparser.set_defaults(func=self.process)
         self.parser = subparser
-
+        
     def process(self, options: SimpleNamespace):
         self.parser.print_help()
         exit(-1)

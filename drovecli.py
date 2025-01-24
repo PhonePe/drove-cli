@@ -4,7 +4,6 @@ from plugins import DrovePlugin
 from types import SimpleNamespace
 
 
-
 class DroveCli:
     def __init__(self, parser: argparse.ArgumentParser):
         self.parser = parser

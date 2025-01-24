@@ -8,7 +8,7 @@ maintainers = [
     "Santanu Sinha <santanu@phonepe.com>",
 ]
 readme = "README.md"
-packages = [{include = "plugins"}, {include = "*.py"}]
+packages = [{include = "plugins"}, {include="plugins/tools"}, {include = "*.py"}]
 license = "Apache-2.0"
 repository = "https://github.com/PhonePe/drove-cli"
 keywords = ["container", "docker", "podman", "distributed-systems", "container-orchestrator"]
