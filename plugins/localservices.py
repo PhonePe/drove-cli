@@ -167,7 +167,7 @@ class LocalServices(plugins.DrovePlugin):
             print("Local service restart command accepted.")
 
     def cancel_service_operation(self, options: SimpleNamespace):
-        data = self.drove_client.post("/apis/v1/operations/{serviceId}/cancel".format(serviceId=options.service_id), None, False)
+        data = self.drove_client.post("/apis/v1/localservices/operations/{serviceId}/cancel".format(serviceId=options.service_id), None, False)
         print("Operation cancellation request registered :" + data["message"])
 
     @retry(wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),

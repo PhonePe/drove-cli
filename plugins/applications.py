@@ -214,7 +214,7 @@ class Applications(plugins.DrovePlugin):
             print("Application restart command accepted.")
 
     def cancel_app_operation(self, options: SimpleNamespace):
-        data = self.drove_client.post("/apis/v1/operations/{appId}/cancel".format(appId=options.app_id), None, False)
+        data = self.drove_client.post("/apis/v1/applications/operations/{appId}/cancel".format(appId=options.app_id), None, False)
         print("Operation cancellation request registered :" + data["message"])
 
     @retry(wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
