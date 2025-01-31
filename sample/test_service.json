@@ -1,0 +1,108 @@
+{
+    "name": "TEST_LOCAL_SERVICE",
+    "version": "1",
+    "executable": {
+        "type": "DOCKER",
+        "url": "ghcr.io/appform-io/perf-test-server-httplib",
+        "dockerPullTimeout": "100 seconds"
+    },
+    "exposedPorts": [
+        {
+            "name": "main",
+            "port": 8000,
+            "type": "HTTP"
+        }
+    ],
+    "volumes": [],
+    "configs": [
+        {
+            "type": "INLINE",
+            "localFilename": "/testfiles/drove.txt",
+            "data" : "RHJvdmUgdGVzdA=="
+        }
+    ],
+    "type": "LOCAL_SERVICE",
+    "logging": {
+        "type": "LOCAL",
+        "maxSize": "100m",
+        "maxFiles": 3,
+        "compress": true
+    },
+    "resources": [
+        {
+            "type": "CPU",
+            "count": 1
+        },
+        {
+            "type": "MEMORY",
+            "sizeInMB": 128
+        }
+    ],
+    "placementPolicy": {
+        "type": "LOCAL",
+        "hostLevel": false
+    },
+    "healthcheck": {
+        "mode": {
+            "type": "HTTP",
+            "protocol": "HTTP",
+            "portName": "main",
+            "path": "/",
+            "verb": "GET",
+            "successCodes": [
+                200
+            ],
+            "payload": "",
+            "connectionTimeout": "1 second",
+            "insecure": false
+        },
+        "timeout": "1 second",
+        "interval": "5 seconds",
+        "attempts": 3,
+        "initialDelay": "0 seconds"
+    },
+    "readiness": {
+        "mode": {
+            "type": "HTTP",
+            "protocol": "HTTP",
+            "portName": "main",
+            "path": "/",
+            "verb": "GET",
+            "successCodes": [
+                200
+            ],
+            "payload": "",
+            "connectionTimeout": "1 second",
+            "insecure": false
+        },
+        "timeout": "1 second",
+        "interval": "3 seconds",
+        "attempts": 3,
+        "initialDelay": "0 seconds"
+    },
+    "tags": {
+        "superSpecialApp": "yes_i_am",
+        "say_my_name": "heisenberg"
+    },
+    "env": {
+        "CORES": "8"
+    },
+    "preShutdown": {
+        "hooks": [
+            {
+                "type": "HTTP",
+                "protocol": "HTTP",
+                "portName": "main",
+                "path": "/",
+                "verb": "GET",
+                "successCodes": [
+                    200
+                ],
+                "payload": "",
+                "connectionTimeout": "1 second",
+                "insecure": false
+            }
+        ],
+        "waitBeforeKill": "3 seconds"
+    }
+}
