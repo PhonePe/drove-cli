@@ -1,10 +1,12 @@
 import argparse
 import re
 import traceback
+import os
+import json
+import yaml
 from typing import Dict
 from typing import List
 
-import pybars
 from mako.template import Template
 
 import droveclient
@@ -32,8 +34,7 @@ class Reader:
         return self.__read_value(name, description, required, default,
                                  lambda x: Reader.__validate_int(x, min_value=min_value, max_value=max_value))
 
-    def read_list(self, name: str, description: str, reader: callable, default: list = None,
-                  required: bool = True) -> list:
+    def read_list(self, name: str, description: str, reader: callable, required: bool = True) -> list:
         values: list = self.provided.get(name, list())
         while len(values) == 0:
             i = 0
@@ -59,22 +60,23 @@ class Reader:
                                                                                           pattern=pattern))
 
     def read_kvs(self, name: str, description: str, key_reader: callable, value_reader: callable,
-                 required: bool = True) -> dict():
+                 required: bool = True) -> dict[str, str]:
         values: Dict[str, str] = self.provided.get(name, dict())
-        while len(values) == 0:
-            i = 0
-            while True:
-                key = key_reader(name, f"{description} - id {i} (Press ENTER to complete list)", False)
-                if key == "":
+        if self.interactive:
+            while len(values) == 0:
+                i = 0
+                while True:
+                    key = key_reader(name, f"{description} - id {i} (Press ENTER to complete list)", False)
+                    if key == "":
+                        break
+                    value = value_reader(name, f"Value for key {key}", True)
+                    values[key] = value
+                    i = i + 1
+                if len(values) == 0 and not required:
                     break
-                value = value_reader(name, f"Value for key {key}", True)
-                values[key] = value
-                i = i + 1
-            if len(values) == 0 and not required:
-                break
         return values
 
-    def read_str_kvs(self, name: str, description: str, required: bool = True,
+    def read_str_kvs(self, name: str, description: str, required: bool = False,
                      max_key_length: int = None, max_value_length: int = None,
                      key_pattern: str = None, value_pattern: str = None) -> Dict[str, str]:
         return self.read_kvs(
@@ -96,6 +98,13 @@ class Reader:
                 pattern=value_pattern
             )
         )
+    
+    def read_url_path(self, name: str, description: str, required: bool = True, default:str = None):
+        return self.read_str(name, description,
+                             pattern='^(?P<path>/[a-zA-Z0-9\-._~!$&\'()*+,;=:@%\/]*)(?:\?(?P<query>[a-zA-Z0-9\-._~!$&\'()*+,;=:@%\/?]*))?$',
+                             default=default,
+                             max_length=1024,
+                             required=required)
 
     @staticmethod
     def __validate_str(value: object, max_length: int, pattern: str) -> List[str]:
@@ -124,16 +133,17 @@ class Reader:
                      validator: callable(str) = None) -> str:
         # If value is passed via argument use that first
         value = self.__ensure_value_for_quiet_mode(default, name, self.provided.get(name, None))
+        actually_required = self.interactive and required and default is None
         while True:
             # If required ask for value
-            value = self.__read_value_from_user(description, default, required) if value is None else value
+            value = self.__read_value_from_user(description, default, actually_required) if value is None else value
             if value is not None:
                 errors = validator(value) if validator is not None else []
                 if len(errors) > 0:
                     print(f"Errors: {errors}")
                 else:
                     return str(value)
-            elif not required:
+            elif not actually_required:
                 return u""
             value = None
 
@@ -162,7 +172,6 @@ class CreateSpecTool(tools.DroveTool):
 
     def __init__(self):
         super().__init__()
-        self.compiler = pybars.Compiler()
 
     # Rest of the file remains unchanged below this point
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
@@ -170,15 +179,38 @@ class CreateSpecTool(tools.DroveTool):
         spec_parser.add_argument("template", help="Template path")
         spec_parser.add_argument("--output", "-o", help="Output file path", default="spec.json")
         spec_parser.add_argument("--values", "-v", help="Use values provided in the specified file", type=str)
+        spec_parser.add_argument("--quiet", "-q", action='store_true',
+                                 help="Do not ask for values from console. Process only using the data provided in --values",
+                                 default=False)
 
         super().populate_options(drove_client, spec_parser)
 
     def process(self, options):
         try:
             template = Template(filename=options.template)
-            reader = Reader(provided=dict(), interactive=True)
+            reader = Reader(
+                provided=self.__convert_file_to_dict(options.values) if options.values is not None else dict(),
+                interactive=not options.quiet)
             print(template.render(reader=reader))
         except Exception as e:
             print("Template parsing error: " + str(e))
             traceback.print_exc()
             return
+
+    def __convert_file_to_dict(self, file_path: str) -> dict[str, any]:
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        # Get file extension
+        _, file_extension = os.path.splitext(file_path)
+        file_extension = file_extension.lower()
+
+        # Read and parse the file based on its extension
+        with open(file_path, 'r') as file:
+            if file_extension == '.json':
+                return json.load(file)
+            elif file_extension in ('.yaml', '.yml'):
+                return yaml.safe_load(file)
+            else:
+                raise ValueError(f"Unsupported file format: {file_extension}")

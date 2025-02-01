@@ -1,0 +1,5 @@
+name: TestApp
+version: 1.0
+container: ghcr.io/appform-io/perf-test-server-httplib
+port: 8000
+# vhost: testapp.drovetest
