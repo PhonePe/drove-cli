@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 class LocalServices(plugins.DrovePlugin):
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
         parser = subparser.add_parser("localservices", help="Drove local service related commands")
@@ -43,6 +43,11 @@ class LocalServices(plugins.DrovePlugin):
         sub_parser = commands.add_parser("activate", help="Activate a local service")
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.set_defaults(func=self.activate_service)
+
+
+        sub_parser = commands.add_parser("conftest", help="Spin up one instance of service on any machine to ensure it is running")
+        sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
+        sub_parser.set_defaults(func=self.conftest_service)
 
         
         sub_parser = commands.add_parser("deactivate", help="Deactivate a local service")
@@ -125,6 +130,14 @@ class LocalServices(plugins.DrovePlugin):
     def activate_service(self, options: SimpleNamespace):
         operation = {
             "type": "ACTIVATE",
+            "serviceId": options.service_id
+        }
+        data = self.drove_client.post("/apis/v1/localservices/operations", operation)
+        print("Local service activated")
+
+    def conftest_service(self, options: SimpleNamespace):
+        operation = {
+            "type": "DEPLOY_TEST_INSTANCE",
             "serviceId": options.service_id
         }
         data = self.drove_client.post("/apis/v1/localservices/operations", operation)
