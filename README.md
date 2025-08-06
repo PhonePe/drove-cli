@@ -85,7 +85,7 @@ To see basic help:
 
 $ drove -h
 
-usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
+usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure] [--username USERNAME] [--password PASSWORD] [--debug]
              {executor,cluster,apps,appinstances,tasks} ...
 
 positional arguments:
@@ -106,8 +106,7 @@ options:
                         Drove endpoint. (For example: https://drove.test.com)
   --auth-header AUTH_HEADER, -t AUTH_HEADER
                         Authorization header value for the provided drove endpoint
-  --insecure INSECURE, -i INSECURE
-                        Do not verify SSL cert for server
+  --insecure, -i        Do not verify SSL cert for server
   --username USERNAME, -u USERNAME
                         Drove cluster username
   --password PASSWORD, -p PASSWORD
@@ -239,7 +238,7 @@ $ drove -e http://localhost:10000 -u guest -p guest ...
 The following CLI format is followed:
 
 ```
-usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
+usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure] [--username USERNAME] [--password PASSWORD] [--debug]
              {executor,cluster,apps,appinstances,tasks} ...
 ```
 ### Basic Arguments
@@ -252,8 +251,7 @@ usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--aut
                         Drove endpoint. (For example: https://drove.test.com)
   --auth-header AUTH_HEADER, -t AUTH_HEADER
                         Authorization header value for the provided drove endpoint
-  --insecure INSECURE, -i INSECURE
-                        Do not verify SSL cert for server
+  --insecure, -i        Do not verify SSL cert for server
   --username USERNAME, -u USERNAME
                         Drove cluster username
   --password PASSWORD, -p PASSWORD
