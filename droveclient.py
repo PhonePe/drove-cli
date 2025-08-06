@@ -1,11 +1,22 @@
 import configparser
 import json
 import os
+import ssl
 import requests
 import urllib3
 from pathlib import Path
-from requests.adapters import HTTPAdapter, Retry
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry as BaseRetry
 from types import SimpleNamespace
+
+class CustomRetry(BaseRetry):
+    """
+    Custom Retry class that prevents retries on SSLError.
+    """
+    def increment(self, method=None, url=None, response=None, error=None, _pool=None, _stacktrace=None):
+        if error and isinstance(error, urllib3.exceptions.SSLError):
+            raise error
+        return super().increment(method, url, response, error, _pool, _stacktrace)
 
 class TokenAuth(requests.auth.AuthBase):
     def __init__(self, token: str):
@@ -33,9 +44,9 @@ class DroveClient:
         self.password = None
         self.insecure: bool = False
         self.session = requests.session()
-        retries = Retry(connect=5,
-                        read=5,
-                        backoff_factor=0.1)
+        retries = CustomRetry(connect=5,
+                              read=5,
+                              backoff_factor=0.1)
 
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
@@ -171,7 +182,8 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
                 username = drove_config.get("username")
                 password = drove_config.get("password")
                 auth_header = drove_config.get("auth_header", None)
-                insecure = drove_config.get("insecure", False)
+                if not args.insecure:
+                    insecure = drove_config.getboolean("insecure", False)
             except Exception as e:
                 #Looks like some random file was passed. Bail out
                 print("Error parsing config file " + config_file + ": " + str(e))
@@ -189,4 +201,3 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
                        has_auth_header=auth_header is not None, insecure=insecure))
     drove_client.start(endpoint, auth_header, username, password, insecure)
     return drove_client
-    
