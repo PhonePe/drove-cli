@@ -14,7 +14,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cluster", "-c", help="Cluster name as specified in config file")
     parser.add_argument("--endpoint", "-e", help="Drove endpoint. (For example: https://drove.test.com)")
     parser.add_argument("--auth-header", "-t", dest="auth_header", help="Authorization header value for the provided drove endpoint")
-    parser.add_argument("--insecure", "-i", help="Do not verify SSL cert for server")
+    parser.add_argument("--insecure", "-i", help="Do not verify SSL cert for server", default=False, action="store_true")
     parser.add_argument("--username", "-u", help="Drove cluster username")
     parser.add_argument("--password", "-p", help="Drove cluster password")
     parser.add_argument("--debug", "-d", help="Print details of errors", default=False, action="store_true")
