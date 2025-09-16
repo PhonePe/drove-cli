@@ -74,18 +74,12 @@ class DroveClient:
 
     def app_instances(self, app_id: str, healthy_only: bool = True):
         data = self.get("/apis/v1/applications/{app_id}/instances".format(app_id=app_id))
-        if healthy_only:
-            instances = [instance["instanceId"] for instance in data if instance["state"] == "HEALTHY"]
-        else:
-            instances = [instance["instanceId"] for instance in data]
+        instances = [instance["instanceId"] for instance in data if not healthy_only or instance["state"] == "HEALTHY"]
         return set(instances)
 
     def service_instances(self, service_id: str, healthy_only: bool = True):
         data = self.get("/apis/v1/localservices/{service_id}/instances".format(service_id=service_id))
-        if healthy_only:
-            instances = [instance["instanceId"] for instance in data if instance["state"] == "HEALTHY"]
-        else:
-            instances = [instance["instanceId"] for instance in data]
+        instances = [instance["instanceId"] for instance in data if not healthy_only or instance["state"] == "HEALTHY"]
         return set(instances)
 
     def get(self, path: str, params = None, expected_status = 200) -> dict:
