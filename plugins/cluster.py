@@ -14,7 +14,7 @@ class Cluster(plugins.DrovePlugin):
 
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
         parser = subparser.add_parser("cluster", help="Drove cluster related commands")
-        
+
         commands = parser.add_subparsers(help="Available commands for cluster management")
 
         sub_parser = commands.add_parser("ping", help="Ping the cluster")
@@ -65,8 +65,8 @@ class Cluster(plugins.DrovePlugin):
         data = dict()
         data["State"] = raw["state"]
         data["Leader Controller"] = raw.get("leader", "")
-        data["Cores"] = "Utilization: {util:.0%} (Total: {total} Used: {used} Free: {free})".format(util = float(raw["usedCores"]/raw["totalCores"]), total=raw["totalCores"], used = raw["usedCores"], free = raw["freeCores"])
-        data["Memory"] = "Utilization: {util:.0%} (Total: {total:,} MB Used: {used:,} MB Free: {free:,} MB)".format(util = float(raw["usedMemory"]/raw["totalMemory"]), total = raw["totalMemory"], used = raw["usedMemory"], free = raw["freeMemory"])
+        data["Cores"] = f"Utilization: {float(raw['usedCores'] / max(raw['totalCores'], 1)):.0%} (Total: {raw['totalCores']} Used: {raw['usedCores']} Free: {raw['freeCores']})"
+        data["Memory"] = f"Utilization: {float(raw['usedMemory'] / max(raw['totalMemory'], 1)):.0%} (Total: {raw['totalMemory']:,} MB Used: {raw['usedMemory']:,} MB Free: {raw['freeMemory']:,} MB)"
         data["Number of live executors"] = raw["numExecutors"]
         data["Applications"] = "Active: {active:,} Total: {total:,}".format(total = raw["numApplications"], active =  raw["numActiveApplications"])
 
@@ -108,7 +108,7 @@ class Cluster(plugins.DrovePlugin):
                   .format(status = e.status_code, message = str(e), raw = e.raw))
         except Exception as e:
             print("Error setting drove cluster to maintenance mode: " + str(e))
-    
+
     def unset_maintenance(self, options: SimpleNamespace):
         try:
             self.drove_client.post("/apis/v1/cluster/maintenance/unset", body={})
