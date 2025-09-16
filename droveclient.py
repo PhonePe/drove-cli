@@ -74,12 +74,13 @@ class DroveClient:
 
     def app_instances(self, app_id: str, healthy_only: bool = True):
         data = self.get("/apis/v1/applications/{app_id}/instances".format(app_id=app_id))
-        if healthy_only:
-            instances = [instance["instanceId"] for instance in data if instance["state"] == "HEALTHY"]
-        else:
-            instances = [instance["instanceId"] for instance in data]
+        instances = [instance["instanceId"] for instance in data if not healthy_only or instance["state"] == "HEALTHY"]
         return set(instances)
 
+    def service_instances(self, service_id: str, healthy_only: bool = True):
+        data = self.get("/apis/v1/localservices/{service_id}/instances".format(service_id=service_id))
+        instances = [instance["instanceId"] for instance in data if not healthy_only or instance["state"] == "HEALTHY"]
+        return set(instances)
 
     def get(self, path: str, params = None, expected_status = 200) -> dict:
         try:
@@ -122,11 +123,11 @@ class DroveClient:
         except Exception as e:
             raise DroveException(-1, str(e))
         
-    def post(self, path: str, body: dict,  params = None, parse=True, expected_status = 200) -> dict:
+    def post(self, path: str, body: dict, params = None, expected_status = 200) -> dict:
         try:
             response = self.session.post(self.endpoint + path, json=body, params=params)
         except requests.ConnectionError as e:
-            raise DroveException(-1, "Error connecting to endpoint " + self.endpoint, raw={})
+            raise DroveException(-1, "Error connecting to endpoint " + self.endpoint, raw="{}")
         return handle_drove_response(response, expected_status)
         
 def handle_drove_response(response: requests.Response, expected_status: int):
@@ -134,7 +135,7 @@ def handle_drove_response(response: requests.Response, expected_status: int):
     text = response.text
     api_response = None
     try:
-        if text != None and response.json() != None:
+        if text is not None and response.json() is not None:
             api_response = response.json()
     except json.decoder.JSONDecodeError:
         raise DroveException(status_code, text)
@@ -144,7 +145,7 @@ def handle_drove_response(response: requests.Response, expected_status: int):
         raise DroveException(status_code,
                             "Drove call failed with status code: {code}, error: {message}".format(code=status_code, message=text),
                             api_response=api_response)
-    if api_response == None:
+    if api_response is None:
         raise DroveException(status_code, "Drove call failed with status code: {code}".format(code=status_code))
                                 
     if "status" in api_response:
