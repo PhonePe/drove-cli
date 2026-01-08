@@ -1,5 +1,5 @@
 """
-Describe plugin for drove-cli - detailed human-readable resource information, hugely inspired by 'kubectl describe'.
+Describe plugin for drove-cli - detailed human-readable resource information, largely inspired by 'kubectl describe'.
 
 This plugin adds 'drove describe' commands for viewing detailed resource info:
 - drove describe executor <executor-id>  : Show detailed executor information
