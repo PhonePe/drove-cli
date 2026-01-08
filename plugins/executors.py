@@ -36,6 +36,13 @@ class Executors(plugins.DrovePlugin):
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.show_tasks)
 
+
+        sub_parser = commands.add_parser("lsinstances", help="Show local service instances running on this executor")
+        sub_parser.add_argument("executor_id", metavar="executor-id", help="Executor id for which info is to be shown")
+        sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 6), default = 1)
+        sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
+        sub_parser.set_defaults(func=self.show_lsinstances)
+
         sub_parser = commands.add_parser("blacklist", help="Blacklist executors")
         sub_parser.add_argument("executor_ids", nargs="+", metavar="executor-id", help="Executor IDs")
         sub_parser.set_defaults(func=self.blacklist)
@@ -79,7 +86,7 @@ class Executors(plugins.DrovePlugin):
             memory_nodes["NUMA node " + str(key)] = memory_nodes.get("NUMA node " + str(key), "") + " Used: {0: ,} MB".format(value)
 
         data["Resources"] = { "CPU" : cpu_nodes, "Memory" : memory_nodes }
-        data["Blacklisted"] = raw["blacklisted"]
+        data["State"] = raw["executorState"]
         data["Tags"] = ",".join(raw["tags"])
         data["Last Updated"] = droveutils.to_date(raw["updated"])
 
@@ -135,6 +142,29 @@ class Executors(plugins.DrovePlugin):
         headers = ["Id", "Source App", "Task ID", "State", "CPU", "Memory(MB)", "Created", "Updated"]
         droveutils.print_table(headers, task_rows)
 
+    def show_lsinstances(self, options: SimpleNamespace):
+        raw = self.drove_client.get("/apis/v1/cluster/executors/{id}".format(id=options.executor_id))
+        headers = ["Instance ID", "Service name", "Service ID", "CPU", "Memory (MB)", "State", "Error Message", "Created", "Last Updated"]
+        rows = []
+        for instance in raw.get("serviceInstances", list()):
+            row = []
+            row.append(instance["instanceId"])
+            row.append(instance["serviceName"])
+            row.append(instance["serviceId"])
+            cpu_list = [r for r in instance.get("resources", list()) if r.get("type", "") == "CPU"]
+            if len(cpu_list) > 0:
+                row.append(len(cpu_list[0].get("cores", dict())))
+            memory_list = [r for r in instance.get("resources", list()) if r.get("type", "") == "MEMORY"]
+            if len(memory_list) > 0:
+                row.append("{0: ,}".format(sum(memory_list[0].get("memoryInMB", dict()).values())))
+            row.append(instance["state"])
+            row.append(instance["errorMessage"])
+            row.append(droveutils.to_date(instance["created"]))
+            row.append(droveutils.to_date(instance["updated"]))
+
+            rows.append(row)
+        rows = sorted(rows, key=itemgetter(options.sort), reverse=options.reverse)
+        droveutils.print_table(headers, rows)
 
     def blacklist(self, options: SimpleNamespace):
         try:

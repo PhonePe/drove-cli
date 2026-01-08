@@ -12,7 +12,7 @@ You can install the CLI from PyPI.
 pip install drove-cli
 ```
 
-### TO install in a virtual env
+### To install in a virtual env
 
 Create virtual environment
 ```bash
@@ -86,16 +86,18 @@ To see basic help:
 $ drove -h
 
 usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
-             {executor,cluster,apps,appinstances,tasks} ...
+             {executor,cluster,apps,appinstances,tasks,config} ...
 
 positional arguments:
-  {executor,cluster,apps,appinstances,tasks}
+  {executor,cluster,apps,appinstances,tasks,config}
                         Available plugins
+    lsinstances         Drove local service instance related commands
     executor            Drove cluster executor related commands
     cluster             Drove cluster related commands
     apps                Drove application related commands
     appinstances        Drove application instance related commands
     tasks               Drove task related commands
+    config              Manage drove cluster configurations
 
 options:
   -h, --help            show this help message and exit
@@ -106,8 +108,7 @@ options:
                         Drove endpoint. (For example: https://drove.test.com)
   --auth-header AUTH_HEADER, -t AUTH_HEADER
                         Authorization header value for the provided drove endpoint
-  --insecure INSECURE, -i INSECURE
-                        Do not verify SSL cert for server
+  --insecure, -i        Do not verify SSL cert for server
   --username USERNAME, -u USERNAME
                         Drove cluster username
   --password PASSWORD, -p PASSWORD
@@ -185,6 +186,21 @@ auth_header = %(prod_token)s
 ..
 ```
 
+### Setting a Default Cluster
+You can set a default cluster so you don't need to specify `-c cluster` on every command:
+
+```ini
+[DEFAULT]
+current_cluster = local
+...
+```
+
+When `current_cluster` is set, commands will automatically use that cluster unless overridden with `-c`.
+
+Priority order for cluster selection:
+
+`-c cluster` command line flag >`current_cluster` in `[DEFAULT]` section > `DEFAULT` section endpoint
+
 The `DEFAULT` section can be used to define common variables like Insecure etc. The `local`, `stage`, `production` etc are names for individual clusters and these sections can be used to define configuration for individual clusters. Cluster name is referred to in the command line by using the `-c` command line option.\
 *Interpolation* of values is supported and can be achieved by using `%(variable_name)s` references.
 
@@ -240,7 +256,7 @@ The following CLI format is followed:
 
 ```
 usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
-             {executor,cluster,apps,appinstances,tasks} ...
+             {executor,cluster,apps,appinstances,tasks,config} ...
 ```
 ### Basic Arguments
 ```
@@ -252,8 +268,7 @@ usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--aut
                         Drove endpoint. (For example: https://drove.test.com)
   --auth-header AUTH_HEADER, -t AUTH_HEADER
                         Authorization header value for the provided drove endpoint
-  --insecure INSECURE, -i INSECURE
-                        Do not verify SSL cert for server
+  --insecure, -i        Do not verify SSL cert for server
   --username USERNAME, -u USERNAME
                         Drove cluster username
   --password PASSWORD, -p PASSWORD
@@ -269,6 +284,7 @@ Commands in drove are meant to address specific functionality. They can be summa
     info                Show details about executor
     appinstances        Show app instances running on this executor
     tasks               Show tasks running on this executor
+    lsinstances         Show local service instances running on this executor
     blacklist           Blacklist executors
     unblacklist         Un-blacklist executors
 ```
@@ -340,6 +356,25 @@ drove executor tasks [-h] [--sort {0,1,2,3,4,5}] [--reverse] executor-id
   --reverse, -r         Sort in reverse order
 ```
 
+##### lsinstances
+
+Show local service instances running on this executor
+
+```shell
+drove executor lsinstances [-h] [--sort {0,1,2,3,4,5}] [--reverse] executor-id
+```
+###### Positional Arguments
+
+`executor-id` - Executor id for which info is to be shown
+
+###### Arguments
+
+```
+  --sort {0,1,2,3,4,5}, -s {0,1,2,3,4,5}
+                        Sort output by column
+  --reverse, -r         Sort in reverse order
+```
+
 ##### blacklist
 
 Take executors out of rotation.
@@ -357,12 +392,12 @@ drove executor blacklist executor-id [executor-id ...]
 Bring blacklisted executors back into rotation.
 
 ```shell
-drove executor blacklist executor-id [executor-id ...]
+drove executor unblacklist executor-id [executor-id ...]
 ```
 
 ###### Positional Arguments
 
-`executor-id` - List of executor ids to be blacklisted. At least one is mandatory.
+`executor-id` - List of executor ids to be brought in to the rotation. At least one is mandatory.
 
 ### cluster
 ---
@@ -809,5 +844,406 @@ drove tasks download [-h] [--out OUT] source-app task-id file
 ```
   --out OUT, -o OUT  Filename to download to. Default is the same filename as provided.
 ```
+### localservices
+---
+Drove local service related commands
+
+```shell
+drove localservices [-h] {list,summary,spec,create,destroy,activate,deactivate,restart,cancelop} ...
+```
+#### Sub-commands
+
+##### list
+
+List all local services
+
+```shell
+drove localservices list [-h] [--sort {0,1,2,3,4,5,6,7,8}] [--reverse]
+```
+
+###### Named Arguments
+
+```
+  --sort {0,1,2,3,4,5,6,7,8}, -s {0,1,2,3,4,5,6,7,8}
+                        Sort output by column
+  --reverse, -r         Sort in reverse order
+```
+
+##### summary
+
+Show a summary for a local service
+```shell
+drove localservices summary [-h] service-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+##### spec
+
+Print the raw json spec for a local service
+```shell
+drove localservices spec [-h] service-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+##### create
+
+Create local service on cluster
+```shell
+drove localservices create [-h] spec-file
+```
+###### Positional Arguments
+
+`spec-file` - JSON spec file for the local service
+
+##### destroy
+
+Destroy an inactive local service
+
+```shell
+drove localservices destroy [-h] service-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+
+##### activate
+
+Activate a local service
+
+```shell
+drove localservices activate [-h] service-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+##### deactivate
+
+Deactivate a local service
+
+```shell
+drove localservices deactivate [-h] service-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+##### update
+
+Deactivate a local service
+
+```shell
+drove localservices update [-h] service-id count
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+`count` - Number of instances per executor
+
+##### restart
+
+Restart a local service.
+
+```shell
+drove localservices restart [-h] [--stop] [--parallelism PARALLELISM] [--timeout TIMEOUT] [--wait] service-id
+```
+
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+###### Named Arguments
+```
+  --stop, -s            Stop current instance before spinning up new ones
+  --parallelism PARALLELISM, -p PARALLELISM
+                        Number of parallel threads to be used to execute operation
+  --timeout TIMEOUT, -t TIMEOUT
+                        Timeout for the operation on the cluster
+  --wait, -w            Wait to ensure all instances are replaced
+```
+##### cancelop
+
+Cancel current operation
+```shell
+drove localservices cancelop [-h] service-id
+```
+###### Positional Arguments
+`service-id` - Service ID
+
+### lsinstances
+---
+Drove local service instance related commands
+
+```shell
+drove lsinstances [-h] {list,info,logs,tail,download,replace,kill} ...
+```
+#### Sub-commands
+
+##### list
+
+List all local service instances
+```shell
+drove lsinstances list [-h] [--old] [--sort {0,1,2,3,4,5}] [--reverse] service-id
+```
+###### Positional Arguments
+`service-id` - Local Service ID
+
+###### Named Arguments
+
+```
+  --parallelism PARALLELISM, -p PARALLELISM
+                        Number of parallel threads to be used to execute operation (default: 1)
+  --timeout TIMEOUT, -t TIMEOUT
+                        Timeout for the operation on the cluster (default: 5 minutes)
+```
+##### info
+
+Print details for an local service instance
+```shell
+drove lsinstances info [-h] service-id instance-id
+```
+###### Positional Arguments
+`service-id` - Local Service ID\
+`instance-id` - Local Service Instance ID
+
+##### logs
+
+Print list of logs for local service instance
+```shell
+drove lsinstances logs [-h] service-id instance-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID\
+`instance-id` - Local Service Instance ID
+
+##### tail
+
+Tail log for local service instance
+```shell
+drove lsinstances tail [-h] [--file FILE] service-id instance-id
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+`instance-id` - Local Service Instance ID
+
+###### Named Arguments
+
+```
+  --log LOG, -l LOG  Log filename to tail. Default is to tail output.log
+```
+
+##### download
+
+Download log for local service instance
+```shell
+drove lsinstances download [-h] [--out OUT] service-id instance-id file
+```
+###### Positional Arguments
+
+`service-id` - Local Service ID
+`instance-id` - Local Service Instance ID
+`file` - Log filename to download
+
+###### Named Arguments
+```
+--out, -o Filename to download to. Default is the same filename as provided.
+```
+##### replace
+
+Replace specific local service instances with fresh instances
+```shell
+drove lsinstances replace [-h] [--stop] [--parallelism PARALLELISM] [--timeout TIMEOUT] [--wait] service-id instance-id [instance-id ...]
+```
+###### Positional Arguments
+`service-id` - Local Service ID
+`instance-id` - Local Service Instance IDs
+
+###### Named Arguments
+```
+  --stop, -s            Stop the instance before spinning up a new one
+  --parallelism PARALLELISM, -p PARALLELISM
+                        Number of parallel threads to be used to execute operation
+  --timeout TIMEOUT, -t TIMEOUT
+                        Timeout for the operation on the cluster
+  --wait, -w            Wait to ensure all instances are replaced
+```
+
+##### kill
+
+Kill specific local service instances
+```shell
+drove lsinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] service-id instance-id [instance-id ...]
+```
+###### Positional Arguments
+`service-id` - Local Service ID
+`instance-id` - Local Service Instance IDs
+
+###### Named Arguments
+
+```
+  --parallelism PARALLELISM, -p PARALLELISM
+                        Number of parallel threads to be used to execute operation
+  --timeout TIMEOUT, -t TIMEOUT
+                        Timeout for the operation on the cluster (default: 5 minutes)
+  --wait, -w            Wait to ensure all instances are killed
+```
+
+### config
+---
+Manage drove cluster configurations (similar to kubectl config). These commands do not require an active cluster connection.
+
+```shell
+drove config [-h] {get-clusters,current-cluster,use-cluster,view,init,add-cluster,delete-cluster} ...
+```
+
+#### Sub-commands
+
+##### get-clusters
+
+List all configured clusters
+
+```shell
+drove config get-clusters [-h]
+```
+
+Example output:
+```
+CURRENT    NAME                 ENDPOINT                                           AUTH   INSECURE
+-----------------------------------------------------------------------------------------------
+*          local                http://localhost:4000                              yes    no
+           stage                http://stage.drove.com:4000                        yes    no
+
+Current cluster: local
+```
+
+##### current-cluster
+
+Show the current default cluster
+
+```shell
+drove config current-cluster [-h]
+```
+
+##### use-cluster
+
+Set the default cluster. After setting, all commands will use this cluster unless overridden with `-c`.
+
+```shell
+drove config use-cluster [-h] cluster-name
+```
+
+###### Positional Arguments
+
+`cluster-name` - Name of the cluster to set as default
+
+Example:
+```shell
+$ drove config use-cluster stage
+Switched to cluster "stage".
+```
+
+##### view
+
+Display the full configuration file
+
+```shell
+drove config view [-h] [--raw]
+```
+
+###### Named Arguments
+
+```
+  --raw, -r  Show raw config file content instead of formatted output
+```
+
+##### init
+
+Initialize a new `~/.drove` config file. Will fail if the file already exists.
+
+```shell
+drove config init [-h] --endpoint ENDPOINT [--name NAME] [--username USERNAME] [--password PASSWORD] [--auth-header AUTH_HEADER] [--insecure]
+```
+
+###### Named Arguments
+
+```
+  --endpoint ENDPOINT, -e ENDPOINT
+                        Drove endpoint URL (required)
+  --name NAME, -n NAME  Cluster name (default: "default")
+  --username USERNAME, -u USERNAME
+                        Username for basic auth
+  --password PASSWORD, -p PASSWORD
+                        Password for basic auth
+  --auth-header AUTH_HEADER, -t AUTH_HEADER
+                        Authorization header value
+  --insecure, -i        Skip SSL verification
+```
+
+Example:
+```shell
+$ drove config init -e http://localhost:4000 -n local -u admin -p admin
+Config initialized at: /home/user/.drove
+Current cluster set to: local
+```
+
+##### add-cluster
+
+Add a new cluster to the config file
+
+```shell
+drove config add-cluster [-h] --endpoint ENDPOINT [--username USERNAME] [--password PASSWORD] [--auth-header AUTH_HEADER] [--insecure] cluster-name
+```
+
+###### Positional Arguments
+
+`cluster-name` - Name for this cluster
+
+###### Named Arguments
+
+```
+  --endpoint ENDPOINT, -e ENDPOINT
+                        Drove endpoint URL (required)
+  --username USERNAME, -u USERNAME
+                        Username for basic auth
+  --password PASSWORD, -p PASSWORD
+                        Password for basic auth
+  --auth-header AUTH_HEADER, -t AUTH_HEADER
+                        Authorization header value
+  --insecure, -i        Skip SSL verification
+```
+
+Example:
+```shell
+$ drove config add-cluster production -e https://prod.drove.com -t "Bearer <token>"
+Cluster 'production' added to /home/user/.drove
+```
+
+##### delete-cluster
+
+Remove a cluster from the config file
+
+```shell
+drove config delete-cluster [-h] cluster-name
+```
+
+###### Positional Arguments
+
+`cluster-name` - Name of the cluster to remove
+
+Example:
+```shell
+$ drove config delete-cluster stage
+
+Cluster 'staging' deleted from /home/user/.drove
+```
+
+> **Note:** If you delete the current default cluster, it will be unset and you'll need to use `drove config use-cluster` to set a new default.
 
 ©2024, Santanu Sinha.
