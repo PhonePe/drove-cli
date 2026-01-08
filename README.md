@@ -86,17 +86,19 @@ To see basic help:
 $ drove -h
 
 usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
-             {executor,cluster,apps,appinstances,tasks,config} ...
+             {executor,cluster,apps,appinstances,tasks,localservices,lsinstances,describe,config} ...
 
 positional arguments:
-  {executor,cluster,apps,appinstances,tasks,config}
+  {executor,cluster,apps,appinstances,tasks,localservices,lsinstances,describe,config}
                         Available plugins
-    lsinstances         Drove local service instance related commands
     executor            Drove cluster executor related commands
     cluster             Drove cluster related commands
     apps                Drove application related commands
     appinstances        Drove application instance related commands
     tasks               Drove task related commands
+    localservices       Drove local service related commands
+    lsinstances         Drove local service instance related commands
+    describe            Show detailed information about a resource
     config              Manage drove cluster configurations
 
 options:
@@ -256,7 +258,7 @@ The following CLI format is followed:
 
 ```
 usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
-             {executor,cluster,apps,appinstances,tasks,config} ...
+             {executor,cluster,apps,appinstances,tasks,localservices,lsinstances,describe,config} ...
 ```
 ### Basic Arguments
 ```
@@ -844,6 +846,377 @@ drove tasks download [-h] [--out OUT] source-app task-id file
 ```
   --out OUT, -o OUT  Filename to download to. Default is the same filename as provided.
 ```
+
+### describe
+---
+Show detailed human-readable information about Drove resources. Unlike other commands that show tabular data, describe provides comprehensive details in a readable format.
+
+```shell
+drove describe [-h] {executor,app,cluster,instance,task,localservice,lsinstance} ...
+```
+
+#### Sub-commands
+
+##### executor
+
+Show detailed executor information including CPU/memory per NUMA node, running instances, tasks, and local services.
+
+```shell
+drove describe executor [-h] [--json] executor-id
+```
+
+###### Positional Arguments
+
+`executor-id` - Executor ID
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Executor Details:
+-----------------
+  ID:              93b6b6f3-c7c8-3824-afc9-cb6d0b32454c
+  Hostname:        localhost
+  Port:            3000
+  Transport:       HTTP
+  Blacklisted:     no
+  Tags:            localhost
+  Last Updated:    08/01/2026, 17:18:35
+
+CPU Resources:
+--------------
+  NUMA Node 0:
+    Free Cores:  3, 4, 5
+    Used Cores:  2
+
+Memory Resources:
+-----------------
+  NUMA Node 0:
+    Free Memory: 2,209 MB
+    Used Memory: 128 MB
+
+App Instances (1):
+------------------
+  [OK] AI-581fa549-b78c-45f4-a098-44fcb8540c2d
+      App: TEST_APP (TEST_APP-1)
+      State: HEALTHY
+      Resources: 1 CPU, 128 MB Memory
+
+Tasks (0):
+----------
+  No tasks running on this executor
+
+Local Service Instances (0):
+----------------------------
+  No local service instances running on this executor
+```
+
+##### app
+
+Show detailed application information including spec, instances, ports, and placement policy.
+
+```shell
+drove describe app [-h] [--json] app-id
+```
+
+###### Positional Arguments
+
+`app-id` - Application ID
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Application Details:
+--------------------
+  ID:                TEST_APP-1
+  Name:              TEST_APP
+  State:             RUNNING
+  Created:           08/01/2026, 17:15:21
+  Updated:           08/01/2026, 17:15:25
+
+Instance Summary:
+-----------------
+  Required:          1
+  Healthy:           1
+  Total CPU:         1
+  Total Memory:      128 MB
+
+Specification:
+--------------
+  Executable Type:   DOCKER
+  Docker Image:      ghcr.io/appform-io/perf-test-server-httplib
+  CPU per Instance:  1
+  Memory per Inst:   128 MB
+
+Exposed Ports:
+--------------
+  - main: 8000 (HTTP)
+
+Placement Policy:
+-----------------
+  Type:              ANY
+
+Instances (1):
+--------------
+  [OK] AI-581fa549-b78c-45f4-a098-44fcb8540c2d
+      Host: localhost
+      State: HEALTHY
+      Created: 08/01/2026, 17:15:29
+```
+
+##### cluster
+
+Show detailed cluster information including resource utilization and all executors.
+
+```shell
+drove describe cluster [-h] [--json]
+```
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Cluster Overview:
+-----------------
+  State:             NORMAL
+  Leader:            localhost:4000
+
+Resource Utilization:
+---------------------
+  CPU:
+    Total:           4
+    Used:            1
+    Free:            3
+    Utilization:     25.0%
+  Memory:
+    Total:           2,337 MB
+    Used:            128 MB
+    Free:            2,209 MB
+    Utilization:     5.5%
+
+Workload Summary:
+-----------------
+  Executors:         1
+  Applications:      1 active / 1 total
+
+Executors (1):
+--------------
+  [OK] 93b6b6f3-c7c8-3824-afc9-cb6d0b32454c
+      Host: localhost:3000
+      CPU: 1/4 used
+      Memory: 128/2,337 MB used
+      Tags: localhost
+```
+
+##### instance
+
+Show detailed application instance information including host, ports, and resources.
+
+```shell
+drove describe instance [-h] [--json] app-id instance-id
+```
+
+###### Positional Arguments
+
+`app-id` - Application ID\
+`instance-id` - Instance ID
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Instance Details:
+-----------------
+  Instance ID:       AI-581fa549-b78c-45f4-a098-44fcb8540c2d
+  Application ID:    TEST_APP-1
+  State:             HEALTHY
+  Created:           08/01/2026, 17:15:29
+  Updated:           08/01/2026, 17:18:55
+
+Host Information:
+-----------------
+  Hostname:          localhost
+  Executor ID:       93b6b6f3-c7c8-3824-afc9-cb6d0b32454c
+
+Port Mappings:
+--------------
+  main:
+    Container Port:  8000
+    Host Port:       43825
+    Type:            HTTP
+
+Resources:
+----------
+  CPU Cores:         1
+    NUMA 0:          2
+  Memory:            128 MB
+    NUMA 0:          128 MB
+```
+
+##### task
+
+Show detailed task information including host, resources, and task result.
+
+```shell
+drove describe task [-h] [--json] source-app task-id
+```
+
+###### Positional Arguments
+
+`source-app` - Source Application Name\
+`task-id` - Task ID
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Task Details:
+-------------
+  Task ID:           T0012
+  Source App:        TEST_APP
+  State:             RUNNING
+  Created:           08/01/2026, 17:19:54
+  Updated:           08/01/2026, 17:19:58
+
+Host Information:
+-----------------
+  Hostname:          localhost
+  Executor ID:       93b6b6f3-c7c8-3824-afc9-cb6d0b32454c
+
+Resources:
+----------
+  CPU Cores:         1
+    NUMA 0:          3
+  Memory:            512 MB
+    NUMA 0:          512 MB
+
+Task Result:
+------------
+  Status:            SUCCESSFUL
+  Exit Code:         0
+```
+
+##### localservice
+
+Show detailed local service information including spec, instances, ports, and placement policy.
+
+```shell
+drove describe localservice [-h] [--json] service-id
+```
+
+###### Positional Arguments
+
+`service-id` - Local Service ID
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Local Service Details:
+----------------------
+  ID:                PROMETHEUS_EXPORTER-1
+  Name:              PROMETHEUS_EXPORTER
+  State:             ACTIVE
+  Created:           08/01/2026, 17:15:00
+  Updated:           08/01/2026, 17:15:30
+
+Instance Summary:
+-----------------
+  Required:          1
+  Healthy:           1
+  Total CPU:         1
+  Total Memory:      128 MB
+
+Specification:
+--------------
+  Executable Type:   DOCKER
+  Docker Image:      prom/node-exporter:latest
+  Memory per Inst:   128 MB
+  CPU per Instance:  1
+
+Exposed Ports:
+--------------
+  - metrics: 9100 (HTTP)
+
+Placement Policy:
+-----------------
+  Type:              LOCAL
+
+Instances (1):
+--------------
+  [OK] SI-581fa549-b78c-45f4-a098-44fcb8540c2d
+      Host: localhost
+      State: HEALTHY
+      Created: 08/01/2026, 17:15:10
+```
+
+##### lsinstance
+
+Show detailed local service instance information including host, ports, and resources.
+
+```shell
+drove describe lsinstance [-h] [--json] service-id instance-id
+```
+
+###### Positional Arguments
+
+`service-id` - Local Service ID\
+`instance-id` - Instance ID
+
+###### Named Arguments
+```
+  --json, -j  Output as JSON
+```
+
+###### Example Output
+```
+Local Service Instance Details:
+-------------------------------
+  Instance ID:       SI-581fa549-b78c-45f4-a098-44fcb8540c2d
+  Service ID:        PROMETHEUS_EXPORTER-1
+  State:             HEALTHY
+  Created:           08/01/2026, 17:15:10
+  Updated:           08/01/2026, 17:18:55
+
+Host Information:
+-----------------
+  Hostname:          localhost
+  Executor ID:       93b6b6f3-c7c8-3824-afc9-cb6d0b32454c
+
+Port Mappings:
+--------------
+  metrics:
+    Container Port:  9100
+    Host Port:       43826
+    Type:            HTTP
+
+Resources:
+----------
+  CPU Cores:         1
+    NUMA 0:        3
+  Memory:            128 MB
+    NUMA 0:        128 MB
+```
+
 ### localservices
 ---
 Drove local service related commands
