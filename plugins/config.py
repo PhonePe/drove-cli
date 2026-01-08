@@ -13,7 +13,6 @@ This plugin adds 'drove config' commands for managing clusters, largely inspired
 
 Usage:
   drove config use-cluster local
-  drove cluster summary 
 """
 
 import argparse
