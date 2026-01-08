@@ -86,10 +86,10 @@ To see basic help:
 $ drove -h
 
 usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
-             {lsinstances,executor,cluster,apps,appinstances,tasks,localservices} ...
+             {lsinstances,executor,cluster,apps,appinstances,tasks,localservices,config} ...
 
 positional arguments:
-  {lsinstances,executor,cluster,apps,appinstances,tasks,localservices}
+  {executor,cluster,apps,appinstances,tasks,config}
                         Available plugins
     lsinstances         Drove local service instance related commands
     executor            Drove cluster executor related commands
@@ -98,6 +98,7 @@ positional arguments:
     appinstances        Drove application instance related commands
     tasks               Drove task related commands
     localservices       Drove local service related commands
+    config              Manage drove cluster configurations
 
 options:
   -h, --help            show this help message and exit
@@ -186,6 +187,21 @@ auth_header = %(prod_token)s
 ..
 ```
 
+### Setting a Default Cluster
+You can set a default cluster so you don't need to specify `-c cluster` on every command:
+
+```ini
+[DEFAULT]
+current_cluster = local
+...
+```
+
+When `current_cluster` is set, commands will automatically use that cluster unless overridden with `-c`.
+
+Priority order for cluster selection:
+
+`-c cluster` command line flag >`current_cluster` in `[DEFAULT]` section > `DEFAULT` section endpoint
+
 The `DEFAULT` section can be used to define common variables like Insecure etc. The `local`, `stage`, `production` etc are names for individual clusters and these sections can be used to define configuration for individual clusters. Cluster name is referred to in the command line by using the `-c` command line option.\
 *Interpolation* of values is supported and can be achieved by using `%(variable_name)s` references.
 
@@ -240,8 +256,8 @@ $ drove -e http://localhost:10000 -u guest -p guest ...
 The following CLI format is followed:
 
 ```
-usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure] [--username USERNAME] [--password PASSWORD] [--debug]
-             {executor,cluster,apps,appinstances,tasks} ...
+usage: drove [-h] [--file FILE] [--cluster CLUSTER] [--endpoint ENDPOINT] [--auth-header AUTH_HEADER] [--insecure INSECURE] [--username USERNAME] [--password PASSWORD] [--debug]
+             {executor,cluster,apps,appinstances,tasks,config} ...
 ```
 ### Basic Arguments
 ```
@@ -1079,5 +1095,156 @@ drove lsinstances kill [-h] [--parallelism PARALLELISM] [--timeout TIMEOUT] serv
                         Timeout for the operation on the cluster (default: 5 minutes)
   --wait, -w            Wait to ensure all instances are killed
 ```
+
+### config
+---
+Manage drove cluster configurations (similar to kubectl config). These commands do not require an active cluster connection.
+
+```shell
+drove config [-h] {get-clusters,current-cluster,use-cluster,view,init,add-cluster,delete-cluster} ...
+```
+
+#### Sub-commands
+
+##### get-clusters
+
+List all configured clusters
+
+```shell
+drove config get-clusters [-h]
+```
+
+Example output:
+```
+CURRENT    NAME                 ENDPOINT                                           AUTH   INSECURE
+-----------------------------------------------------------------------------------------------
+*          local                http://localhost:4000                              yes    no
+           stage                http://stage.drove.com:4000                        yes    no
+
+Current cluster: local
+```
+
+##### current-cluster
+
+Show the current default cluster
+
+```shell
+drove config current-cluster [-h]
+```
+
+##### use-cluster
+
+Set the default cluster. After setting, all commands will use this cluster unless overridden with `-c`.
+
+```shell
+drove config use-cluster [-h] cluster-name
+```
+
+###### Positional Arguments
+
+`cluster-name` - Name of the cluster to set as default
+
+Example:
+```shell
+$ drove config use-cluster stage
+Switched to cluster "stage".
+```
+
+##### view
+
+Display the full configuration file
+
+```shell
+drove config view [-h] [--raw]
+```
+
+###### Named Arguments
+
+```
+  --raw, -r  Show raw config file content instead of formatted output
+```
+
+##### init
+
+Initialize a new `~/.drove` config file. Will fail if the file already exists.
+
+```shell
+drove config init [-h] --endpoint ENDPOINT [--name NAME] [--username USERNAME] [--password PASSWORD] [--auth-header AUTH_HEADER] [--insecure]
+```
+
+###### Named Arguments
+
+```
+  --endpoint ENDPOINT, -e ENDPOINT
+                        Drove endpoint URL (required)
+  --name NAME, -n NAME  Cluster name (default: "default")
+  --username USERNAME, -u USERNAME
+                        Username for basic auth
+  --password PASSWORD, -p PASSWORD
+                        Password for basic auth
+  --auth-header AUTH_HEADER, -t AUTH_HEADER
+                        Authorization header value
+  --insecure, -i        Skip SSL verification
+```
+
+Example:
+```shell
+$ drove config init -e http://localhost:4000 -n local -u admin -p admin
+Config initialized at: /home/user/.drove
+Current cluster set to: local
+```
+
+##### add-cluster
+
+Add a new cluster to the config file
+
+```shell
+drove config add-cluster [-h] --endpoint ENDPOINT [--username USERNAME] [--password PASSWORD] [--auth-header AUTH_HEADER] [--insecure] cluster-name
+```
+
+###### Positional Arguments
+
+`cluster-name` - Name for this cluster
+
+###### Named Arguments
+
+```
+  --endpoint ENDPOINT, -e ENDPOINT
+                        Drove endpoint URL (required)
+  --username USERNAME, -u USERNAME
+                        Username for basic auth
+  --password PASSWORD, -p PASSWORD
+                        Password for basic auth
+  --auth-header AUTH_HEADER, -t AUTH_HEADER
+                        Authorization header value
+  --insecure, -i        Skip SSL verification
+```
+
+Example:
+```shell
+$ drove config add-cluster production -e https://prod.drove.com -t "Bearer <token>"
+Cluster 'production' added to /home/user/.drove
+```
+
+##### delete-cluster
+
+Remove a cluster from the config file
+
+```shell
+drove config delete-cluster [-h] cluster-name
+```
+
+###### Positional Arguments
+
+`cluster-name` - Name of the cluster to remove
+
+Example:
+```shell
+$ drove config delete-cluster stage
+
+Cluster 'staging' deleted from /home/user/.drove
+```
+
+> **Note:** If you delete the current default cluster, it will be unset and you'll need to use `drove config use-cluster` to set a new default.
 
 ©2024, Santanu Sinha.
