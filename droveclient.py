@@ -161,12 +161,19 @@ def build_drove_client(drove_client: DroveClient, args: SimpleNamespace):
                 with open(config_file) as stream:
                     config_parser.read_string(stream.read())
                 drove_config = config_parser['DEFAULT']
-                if args.cluster is not None:
-                    if args.cluster in config_parser:
-                        drove_config = config_parser[args.cluster]
+
+                # Determine which cluster to use (priority: -c flag > current_cluster in config > DEFAULT)
+                cluster_to_use = args.cluster
+                if cluster_to_use is None:
+                    cluster_to_use = config_parser.defaults().get('current_cluster')
+
+                if cluster_to_use is not None and cluster_to_use != 'DEFAULT':
+                    if cluster_to_use in config_parser:
+                        drove_config = config_parser[cluster_to_use]
                     else:
-                        print("error: No cluster definition found for {cluster} in config {config_file}".format(config_file=config_file, cluster=args.cluster))
+                        print("error: No cluster definition found for {cluster} in config {config_file}".format(config_file=config_file, cluster=cluster_to_use))
                         return None
+
                 endpoint = drove_config.get("endpoint")
                 username = drove_config.get("username")
                 password = drove_config.get("password")
