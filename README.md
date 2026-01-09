@@ -41,6 +41,20 @@ EOF
 chmod +x ~/bin/drove
 ```
 
+## Upgrade
+
+### Using pip
+
+```bash
+pip install -U drove-cli
+```
+
+### Using Docker
+
+```bash
+docker pull ghcr.io/phonepe/drove-cli:latest
+```
+
 ## Configuration
 
 Create `~/.drove` with your cluster configuration:
@@ -111,7 +125,7 @@ Use `drove -h` or `drove <command> -h` for detailed help.
 
 ## Documentation
 
-Full documentation is available at **[github.com/PhonePe/drove-orchestrator](https://github.com/PhonePe/drove-orchestrator)**
+Full documentation is available at **[phonepe.github.io/drove-orchestrator](https://phonepe.github.io/drove-orchestrator/cli/)**
 
 ## License
 
