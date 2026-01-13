@@ -77,15 +77,20 @@ class LocalServices(plugins.DrovePlugin):
             api = "/apis/v1/localservices/{service_id}/instances/old"
         data = self.drove_client.get(api.format(service_id = options.service_id))
         #headers = ["Instance ID", "Executor", "CPU", "Memory(MB)", "State", "Error Message", "Created", "Last Updated"]
-        headers = ["Instance ID", "Executor Host", "State", "Error Message", "Created", "Last Updated"]
+        headers = ["Instance ID", "Executor Host", "Ports", "State", "Error Message", "Created", "Last Updated"]
         rows = []
         for instance in data:
             instance_row = []
             instance_row.append(instance["instanceId"])
-            try:
-                instance_row.append(instance["localInfo"]["hostname"])
-            except KeyError:
-                instance_row.append("")
+            local_info = instance.get("localInfo", {})
+            instance_row.append(local_info.get("hostname", ""))
+            ports = local_info.get("ports", {})
+            ports_str = ",".join(
+                "{}:{}".format(key, value["hostPort"])
+                for key, value in ports.items()
+                if "hostPort" in value
+            )
+            instance_row.append(ports_str)
             instance_row.append(instance["state"])
             instance_row.append(instance["errorMessage"])
             instance_row.append(droveutils.to_date(instance["created"]))
