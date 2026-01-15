@@ -85,6 +85,9 @@ class Config(plugins.DrovePlugin):
     def __init__(self) -> None:
         pass
 
+    def needs_client(self) -> bool:
+        return False
+
     def populate_options(self, drove_client, subparser: argparse.ArgumentParser):
         parser = subparser.add_parser("config", help="Manage drove cluster configurations")
         commands = parser.add_subparsers(help="Available config commands")

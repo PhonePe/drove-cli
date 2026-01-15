@@ -36,14 +36,14 @@ def run():
     except (BrokenPipeError, IOError, KeyboardInterrupt):
         pass
     except droveclient.DroveException as e:
-        debug = True if client != None and client.debug else False
+        debug = True if client is not None and client.debug else False
         droveutils.print_drove_error(e, debug)
         if debug:
             traceback.print_exc()
 
     except Exception as e:
         print("Drove CLI error: " + str(e))
-        debug = True if client != None and client.debug else False
+        debug = True if client is not None and client.debug else False
         if debug:
             traceback.print_exc()
         else:
