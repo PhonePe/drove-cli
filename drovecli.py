@@ -2,7 +2,7 @@ import argparse
 import droveclient
 from plugins import DrovePlugin
 from types import SimpleNamespace
-
+import shtab
 
 
 class DroveCli:
@@ -23,6 +23,10 @@ class DroveCli:
     def run(self):
         args = self.parser.parse_args()
         self.debug = args.debug
+
+        if args.print_completion:
+            print(shtab.complete(self.parser, shell=args.print_completion))
+            exit(0)
 
         # Load plugins
         if args.debug:

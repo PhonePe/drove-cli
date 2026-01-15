@@ -18,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--username", "-u", help="Drove cluster username")
     parser.add_argument("--password", "-p", help="Drove cluster password")
     parser.add_argument("--debug", "-d", help="Print details of errors", default=False, action="store_true")
+    parser.add_argument("--print-completion", choices=["bash", "zsh", "tcsh"], help="Print shell completion script for the given shell")
     return parser
 
 def get_parser():
@@ -25,7 +26,7 @@ def get_parser():
     client = None
     client = drovecli.DroveCli(parser)
     return client.parser
- 
+
 
 def run():
     parser = build_parser()
