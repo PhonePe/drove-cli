@@ -32,7 +32,6 @@ class DroveCli:
             plugin = self.plugins.get(args.plugin)
             if plugin and plugin.needs_client():
                 droveclient.build_drove_client(plugin.drove_client, args)
-                print("Created client for plugin: " + args.plugin)
         args.func(args)
     
     def show_help(self, options: SimpleNamespace) -> None:
