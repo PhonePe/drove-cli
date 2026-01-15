@@ -13,8 +13,11 @@ class LocalServices(plugins.DrovePlugin):
     def __init__(self) -> None:
         super().__init__()
 
+    def name(self) -> str:
+        return "localservices"
+
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
-        parser = subparser.add_parser("localservices", help="Drove local service related commands")
+        parser = subparser.add_parser(self.name(), help="Drove local service related commands")
 
         commands = parser.add_subparsers(help="Available commands for local services management")
 

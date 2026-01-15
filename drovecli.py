@@ -8,15 +8,15 @@ from types import SimpleNamespace
 class DroveCli:
     def __init__(self, parser: argparse.ArgumentParser):
         self.parser = parser
-        self.plugins: list = []
+        self.plugins: dict[str, DrovePlugin] = {}
         self.debug = False
-        subparsers = parser.add_subparsers(help="Available plugins")
+        subparsers = parser.add_subparsers(help="Available plugins", dest="plugin")
         drove_client = droveclient.DroveClient()
         for plugin_class in DrovePlugin.plugins:
             plugin = plugin_class()
             # print("Loading plugin: " + str(plugin))
             plugin.populate_options(drove_client=drove_client, subparser=subparsers)
-            self.plugins.append(plugin)
+            self.plugins[plugin.name()] = plugin
         parser.set_defaults(func=self.show_help)
         
         
@@ -25,7 +25,13 @@ class DroveCli:
         self.debug = args.debug
 
         # Load plugins
-        
+        if args.debug:
+            print("Selected plugin: " + args.plugin)
+
+        if args.plugin:
+            plugin = self.plugins.get(args.plugin)
+            if plugin and plugin.needs_client():
+                droveclient.build_drove_client(plugin.drove_client, args)
         args.func(args)
     
     def show_help(self, options: SimpleNamespace) -> None:
