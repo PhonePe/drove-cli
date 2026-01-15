@@ -18,18 +18,16 @@ class DrovePlugin:
         self.drove_client: droveclient.DroveClient = None
         self.parser: argparse.ArgumentParser = None
 
+    def name(self) -> str:
+        raise NotImplementedError("Looks like plugin did not implement name() method")
+
     def needs_client(self) -> bool:
         return True
 
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
         self.drove_client = drove_client
-        subparser.set_defaults(func=self.run_plugin)
+        subparser.set_defaults(func=self.process)
         self.parser = subparser
-
-    def run_plugin(self, options: SimpleNamespace):
-        if self.needs_client():
-            droveclient.build_drove_client(self.drove_client, options)
-        self.process(options)
 
     def process(self, options: SimpleNamespace):
         self.parser.print_help()

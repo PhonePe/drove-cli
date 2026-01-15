@@ -12,8 +12,11 @@ class LocalServices(plugins.DrovePlugin):
     def __init__(self) -> None:
         pass
 
+    def name(self) -> str:
+        return "lsinstances"
+
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
-        parser = subparser.add_parser("lsinstances", help="Drove local service instance related commands")
+        parser = subparser.add_parser(self.name(), help="Drove local service instance related commands")
 
         commands = parser.add_subparsers(help="Available commands for local service management")
 

@@ -33,8 +33,11 @@ class Describe(plugins.DrovePlugin):
     def __init__(self) -> None:
         pass
 
+    def name(self) -> str:
+        return "describe"
+
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
-        parser = subparser.add_parser("describe", help="Show detailed information about a resource")
+        parser = subparser.add_parser(self.name(), help="Show detailed information about a resource")
         commands = parser.add_subparsers(help="Available describe commands")
 
         # describe executor

@@ -12,8 +12,11 @@ class Tasks(plugins.DrovePlugin):
     def __init__(self) -> None:
         pass
 
+    def name(self) -> str:
+        return "tasks"
+
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
-        parser = subparser.add_parser("tasks", help="Drove task related commands")
+        parser = subparser.add_parser(self.name(), help="Drove task related commands")
 
         commands = parser.add_subparsers(help="Available commands for task management")
 

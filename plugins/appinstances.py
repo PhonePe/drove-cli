@@ -12,8 +12,11 @@ class Applications(plugins.DrovePlugin):
     def __init__(self) -> None:
         pass
 
+    def name(self) -> str:
+        return "appinstances"
+
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
-        parser = subparser.add_parser("appinstances", help="Drove application instance related commands")
+        parser = subparser.add_parser(self.name(), help="Drove application instance related commands")
 
         commands = parser.add_subparsers(help="Available commands for application management")
 

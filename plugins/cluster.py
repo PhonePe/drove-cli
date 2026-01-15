@@ -9,11 +9,14 @@ import time
 from types import SimpleNamespace
 
 class Cluster(plugins.DrovePlugin):
+    def name(self):
+        return "cluster"
+
     def __init__(self) -> None:
         pass
 
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
-        parser = subparser.add_parser("cluster", help="Drove cluster related commands")
+        parser = subparser.add_parser(self.name(), help="Drove cluster related commands")
 
         commands = parser.add_subparsers(help="Available commands for cluster management")
 
