@@ -17,11 +17,19 @@ class DrovePlugin:
     def __init__(self) -> None:
         self.drove_client: droveclient.DroveClient = None
         self.parser: argparse.ArgumentParser = None
-        
+
+    def needs_client(self) -> bool:
+        return True
+
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
         self.drove_client = drove_client
-        subparser.set_defaults(func=self.process)
+        subparser.set_defaults(func=self.run_plugin)
         self.parser = subparser
+
+    def run_plugin(self, options: SimpleNamespace):
+        if self.needs_client():
+            droveclient.build_drove_client(self.drove_client, options)
+        self.process(options)
 
     def process(self, options: SimpleNamespace):
         self.parser.print_help()
