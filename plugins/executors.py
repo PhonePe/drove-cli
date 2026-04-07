@@ -71,7 +71,7 @@ class Executors(plugins.DrovePlugin):
     def show_info(self, options: SimpleNamespace):
         raw = self.drove_client.get("/apis/v1/cluster/executors/{id}".format(id=options.executor_id))
         # droveutils.print_dict(raw)
-        data = dict()
+        data = {}
         data["ID"] = raw["state"]["executorId"]
         data["Host"] = raw["hostname"]
         data["Port"] = raw["port"]
@@ -175,6 +175,10 @@ class Executors(plugins.DrovePlugin):
             failed = response["failed"]
             print("Successful: " + ",".join(successful))
             print("Failed: " + ",".join(failed))
+            if "message" in response:
+                print(response["message"])
+            if "approxCompletionTimeMs" in response:
+                print("Approximate completion time: {0:.2f} seconds".format(response["approxCompletionTimeMs"] / 1000))
         except droveclient.DroveException as e:
             print("Error blacklisting: status: {status} message: {message} raw: {raw}"
                   .format(status = e.status_code, message = str(e), raw = e.raw))
@@ -188,6 +192,8 @@ class Executors(plugins.DrovePlugin):
             failed = response["failed"]
             print("Successful: " + ",".join(successful))
             print("Failed: " + ",".join(failed))
+            if "message" in response:
+                print(response["message"])
         except droveclient.DroveException as e:
             print("Error un-blacklisting: status: {status} message: {message} raw: {raw}"
                   .format(status = e.status_code, message = str(e), raw = e.raw))
