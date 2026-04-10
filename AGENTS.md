@@ -21,10 +21,14 @@ drove.py              CLI entry-point (argparse setup, plugin loading)
 droveclient.py        DroveClient — all HTTP calls to the Drove API
 droveutils.py         Shared utilities (log reading, printing, etc.)
 plugins/              Per-command plugins (applications.py, cluster.py, …)
+sample/               Canonical resource spec files shipped with the repo
+  test_app.json       → creates TEST_APP-1 (SERVICE type)
+  test_service.json   → creates TEST_LOCAL_SERVICE-1 (LOCAL_SERVICE type)
+  test_task.json      → task spec (sourceAppName=TEST_APP, taskId=T0012)
 tests/
   conftest.py         Shared pytest fixtures and helper functions
   mock_server.py      Flask-based Drove API stub (offline / CI mode)
-  fixtures/           JSON spec files used by lifecycle tests
+  fixtures/           JSON spec files (mirrors sample/) for offline mock tests
   test_*.py           Live integration tests (require a cluster)
   test_offline_*.py   Offline tests (use mock server — no cluster needed)
 pytest.ini            Pytest configuration
@@ -69,13 +73,10 @@ pytest -m "not offline"   # skip offline tests
 pytest                    # run everything (offline + live)
 ```
 
-Pre-existing cluster resources expected by live tests:
-
-| Resource | ID | Notes |
-|---|---|---|
-| App | `TEST_APP-1` | RUNNING, ≥1 healthy instance |
-| App | `TEST_APP_DEV-1` | RUNNING |
-| Local service | `TEST_LOCAL_SERVICE-1` | INACTIVE |
+The live test suite is **fully self-contained** — it creates all required
+resources (`TEST_APP-1`, `TEST_LOCAL_SERVICE-1`, tasks) from the spec files
+in `sample/` at the start of each module and destroys them on teardown.
+No pre-existing cluster resources are required.
 
 ### Pytest markers
 

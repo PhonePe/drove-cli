@@ -2,36 +2,34 @@
 tests/test_localservices.py — tests for `drove localservices` and
 `drove lsinstances` commands.
 
-Smoke tests use the pre-existing TEST_LOCAL_SERVICE-1 (INACTIVE state).
-Lifecycle tests use the `live_service` fixture which creates/destroys
-CLI_TEST_SERVICE-1.
+All tests create their own resources via the `live_service` fixture, which
+creates TEST_LOCAL_SERVICE-1 from sample/test_service.json, activates it,
+and destroys it on teardown.  No pre-existing cluster resources are required.
 """
 import json
 import time
 import pytest
 from conftest import drove_ok, drove, SVC_ID, SVC_SPEC
 
-EXISTING_SVC = "TEST_LOCAL_SERVICE-1"
-
 
 # ---------------------------------------------------------------------------
-# Smoke / read-only tests against the pre-existing inactive service
+# Smoke / read-only tests — use the live_service fixture (no pre-existing deps)
 # ---------------------------------------------------------------------------
 
 class TestLocalServicesList:
-    def test_list_succeeds(self):
+    def test_list_succeeds(self, live_service):
         out = drove_ok("localservices", "list")
         assert len(out.strip()) > 0
 
-    def test_list_contains_known_service(self):
+    def test_list_contains_live_service(self, live_service):
         out = drove_ok("localservices", "list")
-        assert "TEST_LOCAL_SERVICE" in out
+        assert SVC_ID in out, f"Expected {SVC_ID} in localservices list:\n{out}"
 
-    def test_list_has_header(self):
+    def test_list_has_header(self, live_service):
         out = drove_ok("localservices", "list")
         assert any(h in out for h in ["Name", "State", "Id"])
 
-    def test_list_sort_and_reverse(self):
+    def test_list_sort_and_reverse(self, live_service):
         # --sort takes integer column index: 0=Id, 1=Name, 2=State, ...
         result = drove("localservices", "list",
                        "--sort", "1", "--reverse", check=False)
@@ -39,12 +37,12 @@ class TestLocalServicesList:
 
 
 class TestLocalServicesSummary:
-    def test_summary_existing_service(self):
-        out = drove_ok("localservices", "summary", EXISTING_SVC)
+    def test_summary_live_service(self, live_service):
+        out = drove_ok("localservices", "summary", live_service)
         assert "TEST_LOCAL_SERVICE" in out
 
-    def test_summary_contains_state(self):
-        out = drove_ok("localservices", "summary", EXISTING_SVC)
+    def test_summary_contains_state(self, live_service):
+        out = drove_ok("localservices", "summary", live_service)
         assert "state" in out.lower() or "State" in out
 
     def test_summary_nonexistent_not_found(self):
@@ -56,35 +54,40 @@ class TestLocalServicesSummary:
 
 
 class TestLocalServicesSpec:
-    def test_spec_returns_json(self):
-        out = drove_ok("localservices", "spec", EXISTING_SVC)
+    def test_spec_returns_json(self, live_service):
+        out = drove_ok("localservices", "spec", live_service)
         data = json.loads(out)
         assert isinstance(data, dict)
 
-    def test_spec_contains_name(self):
-        out = drove_ok("localservices", "spec", EXISTING_SVC)
+    def test_spec_contains_name(self, live_service):
+        out = drove_ok("localservices", "spec", live_service)
         data = json.loads(out)
         assert "name" in data
 
-    def test_spec_type_is_local_service(self):
-        out = drove_ok("localservices", "spec", EXISTING_SVC)
+    def test_spec_name_matches(self, live_service):
+        out = drove_ok("localservices", "spec", live_service)
+        data = json.loads(out)
+        assert data.get("name") == "TEST_LOCAL_SERVICE"
+
+    def test_spec_type_is_local_service(self, live_service):
+        out = drove_ok("localservices", "spec", live_service)
         data = json.loads(out)
         assert data.get("type") == "LOCAL_SERVICE"
 
 
 class TestDescribeLocalService:
-    def test_describe_existing_service(self):
-        out = drove_ok("describe", "localservice", EXISTING_SVC)
+    def test_describe_live_service(self, live_service):
+        out = drove_ok("describe", "localservice", live_service)
         assert len(out.strip()) > 0
 
-    def test_describe_json(self):
-        out = drove_ok("describe", "localservice", EXISTING_SVC, "--json")
+    def test_describe_json(self, live_service):
+        out = drove_ok("describe", "localservice", live_service, "--json")
         data = json.loads(out)
         assert isinstance(data, dict)
 
 
 # ---------------------------------------------------------------------------
-# Lifecycle tests — require a live (RUNNING) local service
+# Lifecycle tests — require a live (ACTIVE) local service
 # ---------------------------------------------------------------------------
 
 class TestLocalServicesLifecycle:
@@ -92,18 +95,18 @@ class TestLocalServicesLifecycle:
         out = drove_ok("localservices", "list")
         assert SVC_ID in out
 
-    def test_live_service_state_running(self, live_service):
+    def test_live_service_state_active(self, live_service):
         out = drove_ok("localservices", "summary", live_service)
         assert "RUNNING" in out or "ACTIVE" in out
 
     def test_live_service_spec_valid(self, live_service):
         out = drove_ok("localservices", "spec", live_service)
         data = json.loads(out)
-        assert data.get("name") == "CLI_TEST_SERVICE"
+        assert data.get("name") == "TEST_LOCAL_SERVICE"
 
     def test_live_service_describe(self, live_service):
         out = drove_ok("describe", "localservice", live_service)
-        assert "CLI_TEST_SERVICE" in out
+        assert "TEST_LOCAL_SERVICE" in out
 
     def test_live_service_restart(self, live_service):
         drove_ok("localservices", "restart", live_service, "--wait", timeout=180)

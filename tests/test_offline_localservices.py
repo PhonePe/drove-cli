@@ -6,7 +6,9 @@ All tests use the mock Drove server; no live cluster is required.
 Run with:  pytest -m offline tests/test_offline_localservices.py
 
 The mock server seeds TEST_LOCAL_SERVICE-1 in INACTIVE state.
-Lifecycle tests create CLI_TEST_SERVICE-1 via the fixtures spec.
+Lifecycle tests create and exercise OFFLINE_TEST_SERVICE-1 using
+tests/fixtures/offline_test_service.json — a separate service that does
+not conflict with the seeded EXISTING_SVC (TEST_LOCAL_SERVICE-1).
 """
 import json
 import pytest
@@ -14,7 +16,7 @@ import pytest
 pytestmark = pytest.mark.offline
 
 EXISTING_SVC = "TEST_LOCAL_SERVICE-1"
-CLI_SVC_ID   = "CLI_TEST_SERVICE-1"
+CLI_SVC_ID   = "OFFLINE_TEST_SERVICE-1"   # lifecycle tests use offline_test_service.json
 
 
 # ---------------------------------------------------------------------------
@@ -101,9 +103,14 @@ class TestOfflineDescribeLocalService:
 # ---------------------------------------------------------------------------
 
 class TestOfflineLocalServicesLifecycle:
+    """
+    Uses OFFLINE_TEST_SERVICE-1 (from offline_test_service.json) so that the
+    lifecycle create/destroy cycle does not affect the seeded EXISTING_SVC.
+    """
+
     def test_service_create(self, offline_env):
         from conftest import drove_ok, FIXTURES_DIR
-        spec = str(FIXTURES_DIR / "cli_test_service.json")
+        spec = str(FIXTURES_DIR / "offline_test_service.json")
         drove_ok("localservices", "create", spec, timeout=10)
 
     def test_created_service_listed(self, offline_env):
@@ -129,12 +136,12 @@ class TestOfflineLocalServicesLifecycle:
         from conftest import drove_ok
         out = drove_ok("localservices", "spec", CLI_SVC_ID)
         data = json.loads(out)
-        assert data.get("name") == "CLI_TEST_SERVICE"
+        assert data.get("name") == "OFFLINE_TEST_SERVICE"
 
     def test_service_describe(self, offline_env):
         from conftest import drove_ok
         out = drove_ok("describe", "localservice", CLI_SVC_ID)
-        assert "CLI_TEST_SERVICE" in out
+        assert "OFFLINE_TEST_SERVICE" in out
 
     def test_service_restart(self, offline_env):
         from conftest import drove_ok

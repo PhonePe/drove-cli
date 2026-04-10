@@ -1,7 +1,6 @@
 {
-    "name": "CLI_TEST_APP",
+    "name": "OFFLINE_TEST_SERVICE",
     "version": "1",
-    "type": "SERVICE",
     "executable": {
         "type": "DOCKER",
         "url": "ghcr.io/appform-io/perf-test-server-httplib",
@@ -22,6 +21,13 @@
             "data": "RHJvdmUgdGVzdA=="
         }
     ],
+    "type": "LOCAL_SERVICE",
+    "logging": {
+        "type": "LOCAL",
+        "maxSize": "100m",
+        "maxFiles": 3,
+        "compress": true
+    },
     "resources": [
         {
             "type": "CPU",
@@ -33,7 +39,8 @@
         }
     ],
     "placementPolicy": {
-        "type": "ANY"
+        "type": "LOCAL",
+        "hostLevel": false
     },
     "healthcheck": {
         "mode": {
@@ -42,9 +49,12 @@
             "portName": "main",
             "path": "/",
             "verb": "GET",
-            "successCodes": [200],
+            "successCodes": [
+                200
+            ],
             "payload": "",
-            "connectionTimeout": "1 second"
+            "connectionTimeout": "1 second",
+            "insecure": false
         },
         "timeout": "1 second",
         "interval": "5 seconds",
@@ -58,9 +68,12 @@
             "portName": "main",
             "path": "/",
             "verb": "GET",
-            "successCodes": [200],
+            "successCodes": [
+                200
+            ],
             "payload": "",
-            "connectionTimeout": "1 second"
+            "connectionTimeout": "1 second",
+            "insecure": false
         },
         "timeout": "1 second",
         "interval": "3 seconds",
@@ -68,16 +81,11 @@
         "initialDelay": "0 seconds"
     },
     "tags": {
-        "test": "cli-test-suite",
-        "environment": "test"
+        "superSpecialApp": "yes_i_am",
+        "say_my_name": "heisenberg"
     },
     "env": {
-        "CORES": "2"
-    },
-    "exposureSpec": {
-        "vhost": "cli-testapp.local",
-        "portName": "main",
-        "mode": "ALL"
+        "CORES": "8"
     },
     "preShutdown": {
         "hooks": [
@@ -87,9 +95,12 @@
                 "portName": "main",
                 "path": "/",
                 "verb": "GET",
-                "successCodes": [200],
+                "successCodes": [
+                    200
+                ],
                 "payload": "",
-                "connectionTimeout": "1 second"
+                "connectionTimeout": "1 second",
+                "insecure": false
             }
         ],
         "waitBeforeKill": "3 seconds"

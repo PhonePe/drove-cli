@@ -190,13 +190,10 @@ export DROVE_PASSWORD=secret
 # Then pass -c <cluster-name> when running pytest via the conftest helper
 ```
 
-**Pre-existing cluster resources expected by the live tests:**
-
-| Resource | ID | Required state |
-|---|---|---|
-| Application | `TEST_APP-1` | `RUNNING`, ≥ 1 healthy instance |
-| Application | `TEST_APP_DEV-1` | `RUNNING` |
-| Local Service | `TEST_LOCAL_SERVICE-1` | registered (any state) |
+The live test suite is **fully self-contained** — it creates all required
+resources (`TEST_APP-1`, `TEST_LOCAL_SERVICE-1`, tasks) from the spec files in
+`sample/` at the start of each test module and destroys them on teardown.
+No pre-existing cluster resources are needed.
 
 **Run the live tests:**
 

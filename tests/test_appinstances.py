@@ -1,7 +1,8 @@
 """
 tests/test_appinstances.py — tests for `drove appinstances` commands.
 
-Requires the `live_app` fixture (CLI_TEST_APP-1 with ≥1 healthy instance).
+Requires the `live_app` fixture (TEST_APP-1 with ≥1 healthy instance).
+No pre-existing cluster resources are required.
 """
 import pytest
 from conftest import drove_ok, drove, APP_ID
@@ -130,4 +131,4 @@ class TestDescribeInstance:
     def test_describe_instance_contains_app_id(self, live_app):
         instance_id = _get_instance_id(live_app)
         out = drove_ok("describe", "instance", live_app, instance_id)
-        assert "CLI_TEST_APP" in out or instance_id in out
+        assert "TEST_APP" in out or instance_id in out

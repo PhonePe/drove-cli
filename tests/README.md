@@ -7,10 +7,11 @@ drove-cli Integration Test Suite
 ```
 tests/
 ├── conftest.py              # Shared fixtures, helpers, cluster connectivity
-├── fixtures/                # JSON spec files for test apps/services/tasks
-│   ├── cli_test_app.json
-│   ├── cli_test_service.json
-│   └── cli_test_task.json
+├── fixtures/                # JSON spec files (mirrors sample/) used by offline mock tests
+│   ├── test_app.json
+│   ├── test_service.json
+│   └── test_task.json
+├── mock_server.py           # Lightweight Flask stub for offline tests
 ├── test_cli_basics.py       # Help, completion, error handling (offline)
 ├── test_cluster.py          # drove cluster commands
 ├── test_config.py           # drove config commands (offline)
@@ -26,7 +27,16 @@ tests/
 ```
 pytest
 pytest-timeout
+flask
 drove-cli (installed or run from project root)
+```
+
+Install via:
+
+```bash
+pip install drove-cli[test]
+# or
+poetry install --with test
 ```
 
 ## Configuration
@@ -46,39 +56,46 @@ Override with environment variables:
 ## Running
 
 ```bash
-# All tests (offline + integration)
-pytest tests/ -v
+# Offline tests only (no cluster required — drove-cli developers)
+pytest -m offline
 
-# Offline only (no cluster required)
-pytest tests/test_cli_basics.py tests/test_config.py -v
+# Live integration tests (requires a real Drove cluster)
+pytest -m "not offline"
 
-# Smoke tests (read-only, fast, skip lifecycle)
-pytest tests/ -v -k "not Lifecycle and not Task"
-
-# Full lifecycle tests only
-pytest tests/ -v -k "Lifecycle or Task"
-
-# Specific module
-pytest tests/test_cluster.py -v
+# Everything: offline mock + live integration
+pytest
 
 # Stop on first failure
-pytest tests/ -x -v
+pytest -x -v
 
 # With a specific cluster
-DROVE_CLUSTER=docker pytest tests/ -v
+DROVE_CLUSTER=docker pytest -m "not offline"
 ```
 
 ## Fixtures & Isolation
 
-- `cluster_reachable` (session) — skips all integration tests if cluster is offline
-- `executor_id` (session) — resolves first active executor ID
-- `live_app` (module) — creates `CLI_TEST_APP-1`, scales to 1 healthy instance,
-  destroys on teardown. Used by `test_apps.py` and `test_appinstances.py`.
-- `live_service` (module) — creates `CLI_TEST_SERVICE-1`, activates it,
-  destroys on teardown. Used by `test_localservices.py`.
-- `app_for_tasks` (module) — creates `CLI_TEST_APP-1` in MONITORING state,
-  used by `test_tasks.py`.
+The live test suite is **fully self-contained**.  All resources are created from
+the spec files in `sample/` at the start of each module and destroyed on teardown.
+No pre-existing cluster resources are required.
 
-Pre-existing cluster apps (`TEST_APP-1`, `TEST_LOCAL_SERVICE-1`) are used only
-for read-only smoke tests and are never modified.
+- `executor_id` (session) — resolves first active executor ID from the live cluster
+- `live_app` (module) — creates `TEST_APP-1` from `sample/test_app.json`, scales
+  to 1 healthy instance, destroys on teardown.  Used by `test_apps.py` and
+  `test_appinstances.py`.
+- `live_service` (module) — creates `TEST_LOCAL_SERVICE-1` from
+  `sample/test_service.json`, activates it, destroys on teardown.  Used by
+  `test_localservices.py`.
+- `app_for_tasks` (module) — creates `TEST_APP-1` in MONITORING state from
+  `sample/test_app.json`, used by `test_tasks.py`.  Tasks are submitted using
+  `sample/test_task.json` (taskId=T0012, sourceAppName=TEST_APP).
+
+## Offline mock server
+
+The offline tests start a lightweight Flask stub (`mock_server.py`) on an
+ephemeral port.  The `offline_env` fixture points `DROVE_ENDPOINT` at it so
+the CLI subprocess connects to the stub transparently.
+
+When you add a new CLI endpoint, also add the matching stub route to
+`mock_server.py` and write an `test_offline_<feature>.py` file marked with
+`pytestmark = pytest.mark.offline`.
 """

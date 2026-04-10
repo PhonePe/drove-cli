@@ -191,25 +191,29 @@ def executor_id() -> str:
 
 
 # ---------------------------------------------------------------------------
-# App lifecycle fixture — creates CLI_TEST_APP-1, yields its ID, destroys it
+# App lifecycle fixture — creates TEST_APP-1 from sample/test_app.json
 # ---------------------------------------------------------------------------
 
-APP_SPEC   = str(FIXTURES_DIR / "cli_test_app.json")
-APP_ID     = "CLI_TEST_APP-1"
+# Use the canonical sample spec files that ship with the repo.
+# They define:  TEST_APP-1,  TEST_LOCAL_SERVICE-1,  task sourceAppName=TEST_APP
+SAMPLE_DIR = TESTS_DIR.parent / "sample"
 
-SVC_SPEC   = str(FIXTURES_DIR / "cli_test_service.json")
-SVC_ID     = "CLI_TEST_SERVICE-1"
+APP_SPEC   = str(SAMPLE_DIR / "test_app.json")
+APP_ID     = "TEST_APP-1"
 
-TASK_SPEC  = str(FIXTURES_DIR / "cli_test_task.json")
-TASK_SOURCE = "CLI_TEST_APP"
-TASK_ID    = "CLI_TEST_TASK_001"
+SVC_SPEC   = str(SAMPLE_DIR / "test_service.json")
+SVC_ID     = "TEST_LOCAL_SERVICE-1"
+
+TASK_SPEC  = str(SAMPLE_DIR / "test_task.json")
+TASK_SOURCE = "TEST_APP"
+TASK_ID    = "T0012"
 
 
 @pytest.fixture(scope="module")
 def live_app():
     """
-    Create CLI_TEST_APP-1, deploy 1 instance, wait for HEALTHY, yield app_id.
-    Suspends and destroys the app on teardown.
+    Create TEST_APP-1 from sample/test_app.json, deploy 1 instance, wait for
+    HEALTHY, yield app_id.  Suspends and destroys the app on teardown.
     """
     # Clean up any leftover from a previous run
     drove("apps", "suspend", APP_ID, "--wait", check=False, timeout=120)
@@ -267,8 +271,8 @@ def _destroy_ls_safe(svc_id: str, max_retries: int = 15, delay: float = 3.0):
 @pytest.fixture(scope="module")
 def live_service():
     """
-    Create CLI_TEST_SERVICE-1, activate it, wait for ACTIVE, yield svc_id.
-    Deactivates and destroys on teardown.
+    Create TEST_LOCAL_SERVICE-1 from sample/test_service.json, activate it,
+    wait for ACTIVE, yield svc_id.  Deactivates and destroys on teardown.
 
     NOTE: Drove local services use state="ACTIVE" (not "RUNNING") once healthy.
     Intermediate states on activation: may briefly show PROVISIONING before ACTIVE.

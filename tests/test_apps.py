@@ -1,57 +1,55 @@
 """
 tests/test_apps.py — tests for `drove apps` commands.
 
-Read-only tests use the pre-existing TEST_APP-1 / TEST_APP_DEV-1.
-Lifecycle tests use the `live_app` fixture which creates/destroys CLI_TEST_APP-1.
+All tests create their own resources via the `live_app` fixture, which
+creates TEST_APP-1 from sample/test_app.json, scales it to 1 healthy
+instance, and destroys it on teardown.  No pre-existing cluster resources
+are required.
 """
 import json
 import pytest
-from conftest import drove_ok, drove, FIXTURES_DIR, APP_ID, APP_SPEC, wait_for_app_state
-
-# An app we know exists in MONITORING state (pre-existing in the cluster)
-EXISTING_APP = "TEST_APP-1"
-EXISTING_APP_DEV = "TEST_APP_DEV-1"
+from conftest import drove_ok, drove, APP_ID, APP_SPEC, wait_for_app_state
 
 
 # ---------------------------------------------------------------------------
-# Read-only / smoke tests against pre-existing apps
+# Smoke / read-only tests — use the live_app fixture (no pre-existing deps)
 # ---------------------------------------------------------------------------
 
 class TestAppsList:
-    def test_apps_list_succeeds(self):
+    def test_apps_list_succeeds(self, live_app):
         out = drove_ok("apps", "list")
         assert len(out.strip()) > 0
 
-    def test_apps_list_contains_known_app(self):
+    def test_apps_list_contains_live_app(self, live_app):
         out = drove_ok("apps", "list")
-        assert "TEST_APP" in out, f"Expected TEST_APP in apps list:\n{out}"
+        assert APP_ID in out, f"Expected {APP_ID} in apps list:\n{out}"
 
-    def test_apps_list_has_header_columns(self):
+    def test_apps_list_has_header_columns(self, live_app):
         out = drove_ok("apps", "list")
         for col in ["Id", "Name", "State"]:
             assert col in out, f"Column '{col}' missing from apps list:\n{out}"
 
-    def test_apps_list_sort_by_name(self):
+    def test_apps_list_sort_by_name(self, live_app):
         # --sort takes integer column index: 0=Id, 1=Name, 2=State, ...
         result = drove("apps", "list", "--sort", "1", check=False)
         assert result.returncode == 0
 
-    def test_apps_list_sort_reverse(self):
+    def test_apps_list_sort_reverse(self, live_app):
         result = drove("apps", "list", "--sort", "1", "--reverse", check=False)
         assert result.returncode == 0
 
 
 class TestAppsSummary:
-    def test_summary_existing_app(self):
-        out = drove_ok("apps", "summary", EXISTING_APP)
-        assert EXISTING_APP.split("-")[0] in out  # e.g. "TEST_APP"
+    def test_summary_live_app(self, live_app):
+        out = drove_ok("apps", "summary", live_app)
+        assert "TEST_APP" in out
 
-    def test_summary_contains_state(self):
-        out = drove_ok("apps", "summary", EXISTING_APP)
+    def test_summary_contains_state(self, live_app):
+        out = drove_ok("apps", "summary", live_app)
         assert "state" in out.lower()
 
-    def test_summary_contains_instances(self):
-        out = drove_ok("apps", "summary", EXISTING_APP)
+    def test_summary_contains_instances(self, live_app):
+        out = drove_ok("apps", "summary", live_app)
         assert "Instance" in out or "instance" in out.lower()
 
     def test_summary_nonexistent_app_not_found(self):
@@ -62,34 +60,39 @@ class TestAppsSummary:
 
 
 class TestAppsSpec:
-    def test_spec_returns_json(self):
-        out = drove_ok("apps", "spec", EXISTING_APP)
+    def test_spec_returns_json(self, live_app):
+        out = drove_ok("apps", "spec", live_app)
         data = json.loads(out)
         assert isinstance(data, dict)
 
-    def test_spec_contains_name(self):
-        out = drove_ok("apps", "spec", EXISTING_APP)
+    def test_spec_contains_name(self, live_app):
+        out = drove_ok("apps", "spec", live_app)
         data = json.loads(out)
         assert "name" in data
 
-    def test_spec_contains_executable(self):
-        out = drove_ok("apps", "spec", EXISTING_APP)
+    def test_spec_name_matches(self, live_app):
+        out = drove_ok("apps", "spec", live_app)
+        data = json.loads(out)
+        assert data.get("name") == "TEST_APP"
+
+    def test_spec_contains_executable(self, live_app):
+        out = drove_ok("apps", "spec", live_app)
         data = json.loads(out)
         assert "executable" in data
 
-    def test_spec_contains_resources(self):
-        out = drove_ok("apps", "spec", EXISTING_APP)
+    def test_spec_contains_resources(self, live_app):
+        out = drove_ok("apps", "spec", live_app)
         data = json.loads(out)
         assert "resources" in data
 
 
 class TestDescribeApp:
-    def test_describe_app_existing(self):
-        out = drove_ok("describe", "app", EXISTING_APP)
+    def test_describe_app(self, live_app):
+        out = drove_ok("describe", "app", live_app)
         assert len(out.strip()) > 0
 
-    def test_describe_app_json(self):
-        out = drove_ok("describe", "app", EXISTING_APP, "--json")
+    def test_describe_app_json(self, live_app):
+        out = drove_ok("describe", "app", live_app, "--json")
         data = json.loads(out)
         assert isinstance(data, dict)
 
@@ -101,13 +104,13 @@ class TestDescribeApp:
 
 
 # ---------------------------------------------------------------------------
-# Full lifecycle tests — require a live app
+# Full lifecycle tests — require a live running app
 # ---------------------------------------------------------------------------
 
 class TestAppsLifecycle:
     """
     These tests depend on the `live_app` module-scoped fixture, which creates
-    CLI_TEST_APP-1 with 1 healthy instance before the first test and destroys
+    TEST_APP-1 with 1 healthy instance before the first test and destroys
     it after the last.
     """
 
@@ -126,11 +129,11 @@ class TestAppsLifecycle:
     def test_live_app_spec_valid(self, live_app):
         out = drove_ok("apps", "spec", live_app)
         data = json.loads(out)
-        assert data.get("name") == "CLI_TEST_APP"
+        assert data.get("name") == "TEST_APP"
 
     def test_live_app_describe(self, live_app):
         out = drove_ok("describe", "app", live_app)
-        assert "CLI_TEST_APP" in out
+        assert "TEST_APP" in out
 
     def test_live_app_describe_json(self, live_app):
         out = drove_ok("describe", "app", live_app, "--json")
@@ -152,8 +155,8 @@ class TestAppsLifecycle:
 
     def test_live_app_endpoints_visible(self, live_app):
         out = drove_ok("cluster", "endpoints")
-        # The app exposes vhost cli-testapp.local
-        assert "cli-testapp.local" in out or len(out.strip()) >= 0  # flexible
+        # The app exposes vhost testapp.local (from sample/test_app.json)
+        assert "testapp.local" in out or len(out.strip()) >= 0  # flexible
 
     def test_live_app_restart(self, live_app):
         """Rolling restart should succeed."""

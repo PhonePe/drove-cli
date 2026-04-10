@@ -1,22 +1,24 @@
 """
 tests/test_tasks.py — tests for `drove tasks` commands.
 
-Tasks require that CLI_TEST_APP-1 is created in MONITORING state first
-(the task spec references CLI_TEST_APP as its sourceAppName).
-We create a fresh app (MONITORING state only — no running instances needed)
-to bind the task to, run the task, poll for completion, then verify
-describe/logs commands.
+Tasks require that TEST_APP-1 is created in MONITORING state first
+(sample/test_task.json references TEST_APP as its sourceAppName).
+The `app_for_tasks` fixture creates a fresh app (MONITORING state only —
+no running instances needed) to bind the task to, runs the task, polls
+for completion, then cleans up.
 
-NOTE: The test-task image runs ITERATIONS=5 iterations and exits, which is
-suitable for CI. Expected final state is SUCCESSFUL.
+All resources are created by the test suite; no pre-existing cluster
+resources are required.
+
+NOTE: The test-task image (test_task.json uses ITERATIONS=10) runs for a
+short time and exits. Expected final state is SUCCESSFUL.
 """
 import json
 import time
 import pytest
-from conftest import drove_ok, drove, FIXTURES_DIR, TASK_SOURCE, TASK_ID, APP_SPEC, APP_ID
+from conftest import drove_ok, drove, TASK_SPEC, TASK_SOURCE, TASK_ID, APP_SPEC, APP_ID
 
 
-TASK_SPEC_FILE = str(FIXTURES_DIR / "cli_test_task.json")
 # How long to wait for a task to reach a terminal state (seconds)
 TASK_TIMEOUT = 300
 TASK_POLL_INTERVAL = 5
@@ -43,20 +45,24 @@ def _wait_for_task_terminal(source_app: str, task_id: str,
 
 
 # ---------------------------------------------------------------------------
-# Module-scoped fixture: ensure CLI_TEST_APP exists (MONITORING is enough)
+# Module-scoped fixture: create TEST_APP-1 in MONITORING state for tasks
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def app_for_tasks():
-    """Ensure CLI_TEST_APP-1 exists in at least MONITORING state."""
-    # Destroy any existing instance so create is clean
+    """
+    Create TEST_APP-1 from sample/test_app.json in MONITORING state (no
+    running instances needed — tasks only need the app to exist).
+    Cleans up on teardown.
+    """
+    # Destroy any leftover from a previous run
     drove("apps", "suspend", APP_ID, "--wait", check=False, timeout=120)
     drove("apps", "destroy", APP_ID, check=False, timeout=30)
 
     drove_ok("apps", "create", APP_SPEC, timeout=30)
     yield APP_ID
 
-    # Kill any running task first, then clean up
+    # Kill any running task first, then clean up the app
     drove("tasks", "kill", TASK_SOURCE, TASK_ID, check=False, timeout=30)
     drove("apps", "suspend", APP_ID, "--wait", check=False, timeout=120)
     drove("apps", "destroy", APP_ID, check=False, timeout=30)
@@ -85,7 +91,7 @@ class TestTaskLifecycle:
         """Create a task and verify it's registered (via tasks show).
 
         NOTE: `tasks list` only shows RUNNING (active) tasks; a short-lived task
-        (ITERATIONS=5) may finish in <8s and immediately disappear from the list.
+        may finish quickly and immediately disappear from the list.
         We verify creation via `tasks show`, which returns results for both active
         and recently completed tasks.
         """
@@ -93,7 +99,7 @@ class TestTaskLifecycle:
         drove("tasks", "kill", TASK_SOURCE, TASK_ID, check=False, timeout=30)
         time.sleep(2)
 
-        drove_ok("tasks", "create", TASK_SPEC_FILE, timeout=30)
+        drove_ok("tasks", "create", TASK_SPEC, timeout=30)
 
         # Verify task was registered — use `tasks show` (works for active AND completed)
         result = drove("tasks", "show", TASK_SOURCE, TASK_ID, check=False, timeout=30)

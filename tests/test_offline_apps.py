@@ -12,8 +12,7 @@ pytestmark = pytest.mark.offline
 
 # App IDs seeded in mock_server.py
 EXISTING_APP  = "TEST_APP-1"
-CLI_APP_ID    = "CLI_TEST_APP-1"
-CLI_APP_SPEC  = None  # resolved at module level inside tests via FIXTURES_DIR
+CLI_APP_ID    = "TEST_APP-1"   # lifecycle tests use sample/test_app.json → TEST_APP-1
 
 
 class TestOfflineAppsList:
@@ -118,12 +117,13 @@ class TestOfflineAppsLifecycle:
 
     Because the mock server is stateful (in-process dict), each operation is
     immediately visible to subsequent GETs — no polling delays needed.
+
+    Uses sample/test_app.json (name=TEST_APP, version=1 → app ID TEST_APP-1).
     """
 
     def test_app_create(self, offline_env):
-        from conftest import drove_ok, FIXTURES_DIR
-        spec = str(FIXTURES_DIR / "cli_test_app.json")
-        out = drove_ok("apps", "create", spec, timeout=10)
+        from conftest import drove_ok, APP_SPEC
+        out = drove_ok("apps", "create", APP_SPEC, timeout=10)
         # drove prints a success line or the app ID; either is fine
         assert len(out.strip()) >= 0  # just verify no crash
 
@@ -146,7 +146,7 @@ class TestOfflineAppsLifecycle:
     def test_app_describe_after_scale(self, offline_env):
         from conftest import drove_ok
         out = drove_ok("describe", "app", CLI_APP_ID)
-        assert CLI_APP_ID in out or "CLI_TEST_APP" in out
+        assert CLI_APP_ID in out or "TEST_APP" in out
 
     def test_app_restart(self, offline_env):
         from conftest import drove_ok

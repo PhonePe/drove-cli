@@ -14,20 +14,23 @@ import pytest
 
 pytestmark = pytest.mark.offline
 
-TASK_SOURCE   = "CLI_TEST_APP"
-TASK_ID       = "CLI_TEST_TASK_001"
+# TASK_SOURCE, TASK_ID, and APP_SPEC are imported from conftest:
+#   TASK_SOURCE = "TEST_APP"      (sourceAppName in sample/test_task.json)
+#   TASK_ID     = "T0012"         (taskId in sample/test_task.json)
+#   APP_SPEC    = sample/test_app.json  (name=TEST_APP → ID TEST_APP-1)
+from conftest import TASK_SOURCE, TASK_ID, APP_SPEC, TASK_SPEC
 
 
 @pytest.fixture(scope="module")
 def app_for_offline_tasks(offline_env):
     """
-    Ensure CLI_TEST_APP-1 exists in the mock server before task tests run.
-    The mock task spec references CLI_TEST_APP as sourceAppName.
+    Ensure TEST_APP-1 exists in the mock server before task tests run.
+    The mock task spec (sample/test_task.json) references TEST_APP as
+    sourceAppName.
     """
-    from conftest import drove_ok, FIXTURES_DIR
-    spec = str(FIXTURES_DIR / "cli_test_app.json")
-    drove_ok("apps", "create", spec, timeout=10)
-    yield "CLI_TEST_APP-1"
+    from conftest import drove_ok
+    drove_ok("apps", "create", APP_SPEC, timeout=10)
+    yield "TEST_APP-1"
     # No teardown needed — offline_env resets state between modules
 
 
@@ -45,12 +48,11 @@ class TestOfflineTasksList:
 
 class TestOfflineTaskLifecycle:
     def test_task_create(self, app_for_offline_tasks):
-        from conftest import drove_ok, drove, FIXTURES_DIR
-        spec = str(FIXTURES_DIR / "cli_test_task.json")
+        from conftest import drove_ok, drove
         # Kill any leftover task first
         drove("tasks", "kill", TASK_SOURCE, TASK_ID, check=False, timeout=10)
 
-        drove_ok("tasks", "create", spec, timeout=10)
+        drove_ok("tasks", "create", TASK_SPEC, timeout=10)
 
         # Verify task registered via `tasks show` (works for active AND completed)
         result = drove("tasks", "show", TASK_SOURCE, TASK_ID,
