@@ -1,10 +1,23 @@
 """
 conftest.py — shared fixtures and utilities for drove-cli integration tests.
 
-The tests run against a live Drove cluster. Configure the cluster via ~/.drove
-or environment variables (see README in tests/).
+There are two test modes:
 
-Environment Variables (override ~/.drove):
+1. **Live / integration tests** (markers: ``smoke``, ``lifecycle``)
+   Run against a real Drove cluster.  Configure via ~/.drove or environment
+   variables (see below).  These are the default tests run by ``pytest``.
+
+2. **Offline / mock tests** (marker: ``offline``)
+   Run against the built-in mock server (tests/mock_server.py) — no cluster
+   needed.  The ``mock_drove_server`` session fixture starts a lightweight
+   Flask stub on an ephemeral port and points ``DROVE_ENDPOINT`` at it so the
+   CLI subprocess connects to the stub transparently.
+
+   Run offline tests only:   ``pytest -m offline``
+   Run live tests only:       ``pytest -m "not offline"``
+   Run everything:            ``pytest``
+
+Environment Variables (override ~/.drove — used by live tests):
   DROVE_ENDPOINT    e.g. http://localhost:10000
   DROVE_USERNAME    basic auth username
   DROVE_PASSWORD    basic auth password
@@ -275,3 +288,79 @@ def live_service():
     # Teardown: deactivate → wait for INACTIVE → destroy
     _destroy_ls_safe(SVC_ID)
 
+
+# ---------------------------------------------------------------------------
+# Offline / mock server fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session")
+def mock_drove_server():
+    """
+    Session-scoped fixture that starts the mock Drove API server on an
+    ephemeral localhost port and yields the server object.
+
+    The server is stopped automatically after all offline tests finish.
+    Access the endpoint via ``mock_drove_server.endpoint``.
+    Access (and mutate) state via ``mock_drove_server.state``.
+
+    Usage in a test::
+
+        def test_something(mock_drove_server):
+            # DROVE_ENDPOINT is set by the `offline_env` fixture; the CLI
+            # subprocess already points at the mock server.
+            out = drove_ok("cluster", "ping")
+            assert "ping successful" in out.lower()
+    """
+    from mock_server import MockDroveServer
+    server = MockDroveServer()
+    server.start()
+    yield server
+    server.stop()
+
+
+@pytest.fixture(scope="module")
+def offline_env(mock_drove_server):
+    """
+    Module-scoped fixture that resets mock server state and sets the
+    ``DROVE_ENDPOINT`` environment variable so the CLI subprocess connects to
+    the mock server.  Restores the original environment after the module.
+
+    Depend on this fixture (not ``mock_drove_server`` directly) in offline
+    test modules.
+    """
+    mock_drove_server.reset()
+
+    orig_endpoint = os.environ.get("DROVE_ENDPOINT")
+    orig_cluster  = os.environ.get("DROVE_CLUSTER")
+    orig_username = os.environ.get("DROVE_USERNAME")
+    orig_password = os.environ.get("DROVE_PASSWORD")
+    orig_auth_hdr = os.environ.get("DROVE_AUTH_HEADER")
+
+    # Point CLI at mock server; clear cluster/auth so ~/.drove is not used
+    os.environ["DROVE_ENDPOINT"] = mock_drove_server.endpoint
+    os.environ.pop("DROVE_CLUSTER",  None)
+    os.environ.pop("DROVE_USERNAME", None)
+    os.environ.pop("DROVE_PASSWORD", None)
+    os.environ.pop("DROVE_AUTH_HEADER", None)
+
+    yield mock_drove_server
+
+    # Restore
+    def _restore(key, val):
+        if val is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = val
+
+    _restore("DROVE_ENDPOINT", orig_endpoint)
+    _restore("DROVE_CLUSTER",  orig_cluster)
+    _restore("DROVE_USERNAME", orig_username)
+    _restore("DROVE_PASSWORD", orig_password)
+    _restore("DROVE_AUTH_HEADER", orig_auth_hdr)
+
+
+@pytest.fixture(scope="module")
+def offline_executor_id(offline_env) -> str:
+    """Return the mock executor ID used by the offline test suite."""
+    from mock_server import EXECUTOR_ID
+    return EXECUTOR_ID
