@@ -44,6 +44,7 @@ jobs:
       - name: Run offline tests
         id: run_tests
         run: |
+          mkdir -p reports
           pytest -m offline \
             --tb=short \
             --junit-xml=reports/offline-tests-${{ matrix.python-version }}.xml \
@@ -69,9 +70,10 @@ jobs:
           {
             echo "## Offline Tests — Python ${PY}"
             echo ""
-            if grep -q "passed" "$REPORT"; then
-              SUMMARY=$(grep -E "passed|failed|error" "$REPORT" | tail -1)
-              if echo "$SUMMARY" | grep -qE "failed|error"; then
+            if [ -f "$REPORT" ] && grep -q "passed\|failed\|error" "$REPORT"; then
+              # Strip the ===...=== decoration pytest wraps the summary line in
+              SUMMARY=$(grep -E "passed|failed|error" "$REPORT" | tail -1 | sed 's/^[= ]*//;s/[= ]*$//')
+              if echo "$SUMMARY" | grep -qiE "failed|error"; then
                 echo "❌ **${SUMMARY}**"
               else
                 echo "✅ **${SUMMARY}**"
@@ -81,7 +83,7 @@ jobs:
             fi
             echo ""
             # Include failures if any
-            if grep -q "FAILED\|ERROR" "$REPORT"; then
+            if grep -q "FAILED\|ERROR" "$REPORT" 2>/dev/null; then
               echo "<details><summary>Failures</summary>"
               echo ""
               echo '```'
@@ -106,26 +108,31 @@ jobs:
             const py   = process.env.PYTHON_VERSION;
             const path = process.env.REPORT_PATH;
 
-            // Parse pytest summary line  e.g. "13 passed, 93 deselected in 17s"
+            // Parse pytest summary line, e.g.:
+            //   "===== 106 passed, 124 deselected in 22s ====="
+            // Strip the leading/trailing ====... decoration.
             let summaryLine = '(no output)';
             let passed = false;
+            let failureBlock = '';
             try {
               const text = fs.readFileSync(path, 'utf8');
               const lines = text.split('\n');
-              // last non-empty line that contains "passed" or "failed"
+
+              // Walk backwards to find the last summary line
               for (let i = lines.length - 1; i >= 0; i--) {
                 if (/passed|failed|error/i.test(lines[i])) {
-                  summaryLine = lines[i].trim();
+                  // Strip pytest's ===...=== decoration
+                  summaryLine = lines[i].replace(/^[= ]+|[= ]+$/g, '').trim();
                   break;
                 }
               }
-              passed = /passed/.test(summaryLine) && !/failed|error/i.test(summaryLine);
+              // Green only when there are passes and zero failures/errors
+              passed = /\d+\s+passed/.test(summaryLine) && !/failed|error/i.test(summaryLine);
 
-              // Collect failure snippets (first 60 lines of failures section)
-              const failureStart = text.indexOf('FAILURES');
-              var failureBlock = '';
-              if (failureStart !== -1) {
-                failureBlock = text.slice(failureStart, failureStart + 3000);
+              // Collect failures section (up to 3000 chars)
+              const failIdx = text.indexOf('FAILURES');
+              if (failIdx !== -1) {
+                failureBlock = text.slice(failIdx, failIdx + 3000);
               }
             } catch(e) {
               summaryLine = `Could not read report: ${e.message}`;
