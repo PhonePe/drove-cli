@@ -1,0 +1,26 @@
+{
+    "sourceAppName": "CLI_TEST_APP",
+    "taskId": "CLI_TEST_TASK_001",
+    "executable": {
+        "url": "ghcr.io/appform-io/test-task",
+        "dockerPullTimeout": "100 seconds",
+        "type": "DOCKER"
+    },
+    "volumes": [],
+    "resources": [
+        {
+            "type": "CPU",
+            "count": 1
+        },
+        {
+            "type": "MEMORY",
+            "sizeInMB": 512
+        }
+    ],
+    "env": {
+        "ITERATIONS": "5"
+    },
+    "placementPolicy": {
+        "type": "ANY"
+    }
+}
