@@ -223,8 +223,8 @@ pytest
 
 ## AI Assistant Skill (Sai)
 
-A [Sai](https://sai.ai) skill for `drove-cli` is included in the `drove-cli/`
-directory.  Install it in Sai and the assistant will automatically help you run
+An AI Agent skill for `drove-cli` is included in the `drove-cli/`
+directory.  Install it in your agent and the assistant will automatically help you run
 `drove` commands, troubleshoot issues, and walk through common workflows —
 without you having to look anything up.
 
