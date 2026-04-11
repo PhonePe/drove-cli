@@ -1,12 +1,17 @@
 """
 tests/test_config.py — tests for `drove config` commands.
 
-All config sub-commands are offline (no cluster required), but we still
-run them against the real config file to verify they don't regress.
+These tests read the real ~/.drove config file to verify the config sub-commands
+work correctly.  They are skipped automatically when ~/.drove does not exist
+(e.g. on CI runners that have no cluster configuration).
 """
 import os
 import pytest
 from conftest import drove_ok, drove
+
+# Skip the entire module when there is no local config file to read from.
+if not os.path.exists(os.path.expanduser("~/.drove")):
+    pytest.skip("~/.drove not found — skipping config tests", allow_module_level=True)
 
 
 class TestConfigGetClusters:

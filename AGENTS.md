@@ -122,7 +122,7 @@ operations (create, scale, destroy, etc.) are reflected in subsequent GET calls.
 
 ## Code Style
 
-- Python 3.9+ compatible (no 3.10+ match/case)
+- Python 3.10+ compatible
 - Type annotations on new public functions
 - `drove_ok()` / `drove()` helpers from `conftest.py` for all subprocess calls
 - No `time.sleep()` in offline tests — the mock responds synchronously

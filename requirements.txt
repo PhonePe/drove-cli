@@ -1,6 +1,0 @@
-certifi==2026.2.25
-Requests==2.32.5
-tabulate==0.9.0
-tenacity==9.1.2
-urllib3==2.6.3
-shtab==1.8.0

@@ -1,4 +1,3 @@
-"""
 drove-cli Integration Test Suite
 =================================
 
@@ -98,4 +97,3 @@ the CLI subprocess connects to the stub transparently.
 When you add a new CLI endpoint, also add the matching stub route to
 `mock_server.py` and write an `test_offline_<feature>.py` file marked with
 `pytestmark = pytest.mark.offline`.
-"""
