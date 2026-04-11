@@ -18,8 +18,42 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--username", "-u", help="Drove cluster username")
     parser.add_argument("--password", "-p", help="Drove cluster password")
     parser.add_argument("--debug", "-d", help="Print details of errors", default=False, action="store_true")
+    parser.add_argument("--full-help", help="Show help for every command and sub-command", default=False, action="store_true")
     parser.add_argument("--print-completion", choices=["bash", "zsh", "tcsh"], help="Print shell completion script for the given shell")
     return parser
+
+def get_parser():
+    parser = build_parser()
+    client = None
+    client = drovecli.DroveCli(parser)
+    return client.parser
+
+
+def run():
+    parser = build_parser()
+    client = None
+    try:
+        client = drovecli.DroveCli(parser)
+        client.run()
+    except (BrokenPipeError, IOError, KeyboardInterrupt):
+        pass
+    except droveclient.DroveException as e:
+        debug = True if client is not None and client.debug else False
+        droveutils.print_drove_error(e, debug)
+        if debug:
+            traceback.print_exc()
+
+    except Exception as e:
+        print("Drove CLI error: " + str(e))
+        debug = True if client is not None and client.debug else False
+        if debug:
+            traceback.print_exc()
+        else:
+            parser.print_help()
+
+if __name__ == '__main__':
+    run()
+
 
 def get_parser():
     parser = build_parser()

@@ -1,0 +1,183 @@
+name: Offline Tests
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches-ignore:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write  # required to post / update the PR comment
+
+jobs:
+  offline-tests:
+    name: Offline tests (mock server, no cluster)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: false
+
+      - name: Install dependencies
+        run: poetry install --with test
+
+      # Run offline tests; always capture output even on failure
+      - name: Run offline tests
+        id: run_tests
+        run: |
+          mkdir -p reports
+          pytest -m offline \
+            --tb=short \
+            --junit-xml=reports/offline-tests-${{ matrix.python-version }}.xml \
+            -q \
+            2>&1 | tee reports/offline-tests-${{ matrix.python-version }}.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-test-reports-py${{ matrix.python-version }}
+          path: reports/
+          retention-days: 7
+
+      # Build a compact markdown summary and write it to $GITHUB_STEP_SUMMARY
+      - name: Write job summary
+        if: always()
+        run: |
+          PY="${{ matrix.python-version }}"
+          REPORT="reports/offline-tests-${PY}.txt"
+          {
+            echo "## Offline Tests — Python ${PY}"
+            echo ""
+            if [ -f "$REPORT" ] && grep -q "passed\|failed\|error" "$REPORT"; then
+              # Strip the ===...=== decoration pytest wraps the summary line in
+              SUMMARY=$(grep -E "passed|failed|error" "$REPORT" | tail -1 | sed 's/^[= ]*//;s/[= ]*$//')
+              if echo "$SUMMARY" | grep -qiE "failed|error"; then
+                echo "❌ **${SUMMARY}**"
+              else
+                echo "✅ **${SUMMARY}**"
+              fi
+            else
+              echo "⚠️ Could not parse test results."
+            fi
+            echo ""
+            # Include failures if any
+            if grep -q "FAILED\|ERROR" "$REPORT" 2>/dev/null; then
+              echo "<details><summary>Failures</summary>"
+              echo ""
+              echo '```'
+              grep -A 10 "FAILED\|_ ERROR _" "$REPORT" | head -80
+              echo '```'
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Post / update a sticky PR comment with consolidated results
+      # Only runs on pull_request events (not plain push)
+      - name: Post PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+          REPORT_PATH: reports/offline-tests-${{ matrix.python-version }}.txt
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs   = require('fs');
+            const py   = process.env.PYTHON_VERSION;
+            const path = process.env.REPORT_PATH;
+
+            // Parse pytest summary line, e.g.:
+            //   "===== 106 passed, 124 deselected in 22s ====="
+            // Strip the leading/trailing ====... decoration.
+            let summaryLine = '(no output)';
+            let passed = false;
+            let failureBlock = '';
+            try {
+              const text = fs.readFileSync(path, 'utf8');
+              const lines = text.split('\n');
+
+              // Walk backwards to find the last summary line
+              for (let i = lines.length - 1; i >= 0; i--) {
+                if (/passed|failed|error/i.test(lines[i])) {
+                  // Strip pytest's ===...=== decoration
+                  summaryLine = lines[i].replace(/^[= ]+|[= ]+$/g, '').trim();
+                  break;
+                }
+              }
+              // Green only when there are passes and zero failures/errors
+              passed = /\d+\s+passed/.test(summaryLine) && !/failed|error/i.test(summaryLine);
+
+              // Collect failures section (up to 3000 chars)
+              const failIdx = text.indexOf('FAILURES');
+              if (failIdx !== -1) {
+                failureBlock = text.slice(failIdx, failIdx + 3000);
+              }
+            } catch(e) {
+              summaryLine = `Could not read report: ${e.message}`;
+            }
+
+            const icon   = passed ? '✅' : '❌';
+            const marker = `<!-- drove-cli-offline-tests-py${py} -->`;
+
+            let body = `${marker}\n`;
+            body += `## ${icon} Offline Tests — Python ${py}\n\n`;
+            body += `**${summaryLine}**\n\n`;
+            body += `> Commit: \`${context.sha.slice(0, 7)}\` | `;
+            body += `[View full log](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n`;
+            if (failureBlock) {
+              body += `\n<details><summary>Failures</summary>\n\n\`\`\`\n${failureBlock.slice(0, 2500)}\n\`\`\`\n</details>\n`;
+            }
+
+            // Find existing comment with the same marker and update, else create
+            const { data: comments } = await github.rest.issues.listComments({
+              owner:    context.repo.owner,
+              repo:     context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated existing comment #${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner:       context.repo.owner,
+                repo:        context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+              core.info('Created new PR comment');
+            }
+
+      # Fail the job after the comment is posted so the check turns red
+      - name: Assert tests passed
+        if: steps.run_tests.outputs.exit_code != '0'
+        run: |
+          echo "::error::Offline tests failed on Python ${{ matrix.python-version }}"
+          exit 1

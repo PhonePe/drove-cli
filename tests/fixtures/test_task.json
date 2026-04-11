@@ -1,0 +1,26 @@
+{
+    "sourceAppName": "TEST_APP",
+    "taskId": "T0012",
+    "executable": {
+        "url": "ghcr.io/appform-io/test-task",
+        "dockerPullTimeout": "100 seconds",
+        "type": "DOCKER"
+    },
+    "volumes": [],
+    "resources": [
+        {
+            "type": "CPU",
+            "count": 1
+        },
+        {
+            "type": "MEMORY",
+            "sizeInMB": 512
+        }
+    ],
+    "env": {
+        "ITERATIONS" : "10"
+    },
+    "placementPolicy": {
+        "type": "ANY"
+    }
+}

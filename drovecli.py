@@ -18,14 +18,30 @@ class DroveCli:
             plugin.populate_options(drove_client=drove_client, subparser=subparsers)
             self.plugins[plugin.name()] = plugin
         parser.set_defaults(func=self.show_help)
-        
-        
+
+    @staticmethod
+    def _print_full_help(parser: argparse.ArgumentParser) -> None:
+        """Recursively print help for a parser and all its subcommands."""
+        separator = "=" * 72
+        print(separator)
+        print(parser.format_help())
+
+        for action in parser._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                for _name, subparser in sorted(action.choices.items()):
+                    DroveCli._print_full_help(subparser)
+                break
+
     def run(self):
         args = self.parser.parse_args()
         self.debug = args.debug
 
         if args.print_completion:
             print(shtab.complete(self.parser, shell=args.print_completion))
+            exit(0)
+
+        if args.full_help:
+            self._print_full_help(self.parser)
             exit(0)
 
         # Load plugins
@@ -37,7 +53,7 @@ class DroveCli:
             if plugin and plugin.needs_client():
                 droveclient.build_drove_client(plugin.drove_client, args)
         args.func(args)
-    
+
     def show_help(self, options: SimpleNamespace) -> None:
         self.parser.print_help()
         exit(-1)
