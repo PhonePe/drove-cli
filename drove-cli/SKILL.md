@@ -44,20 +44,51 @@ fallback invocation prefix.
 
 ---
 
-## Step 1 — Load the Full Command Reference
+## Step 1 — Bootstrap Session for Token-Efficient Usage
 
-Run this once to bring every command and sub-command into context:
+Do these two things at the start of every session:
+
+### 1a. Enable compact data output
+
+```bash
+export DROVE_COMPACT=1
+```
+
+This makes **all data-producing commands** return token-optimised output
+automatically — TSV tables (tab-separated, no padding), flat `key=value`
+dicts, and single-line JSON.
+
+Affected commands: `apps list`, `apps summary`, `cluster summary`,
+`executor list`, `localservices list/summary`, `lsinstances list/info`,
+`tasks list/show`, `describe *`, `appinstances list/info`.
+
+You can also pass `--compact` per-command instead of the env var.
+`--compact` is a **global flag** — it goes before the plugin name:
+
+```bash
+drove --compact apps list          # ✅ correct
+drove apps list --compact          # ❌ won't work
+```
+
+> `DROVE_COMPACT` / `--compact` does **not** affect `--full-help` output
+> (that has its own compact format by default).
+
+### 1b. Load the command reference
 
 ```bash
 drove --full-help
 ```
 
-This prints the complete, always-up-to-date help for every command and
-sub-command in one shot. Use it to look up flags, argument names, and
-available options — no need to memorise them.
+Prints a **compact one-line-per-command** reference (~3 KB).
+Use it to look up flags, argument names, and available options.
+
+For the full verbose argparse output (human-readable), add `--verbose`:
+
+```bash
+drove --full-help --verbose        # ~35 KB, human-readable
+```
 
 > **Full documentation:** https://phonepe.github.io/drove-orchestrator/cli/
-> Refer to this whenever the built-in help isn't enough or something is unclear.
 
 ---
 

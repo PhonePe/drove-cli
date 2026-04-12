@@ -4,7 +4,24 @@ import json
 import tabulate
 import time
 
+# ---------------------------------------------------------------------------
+# Compact mode state
+# ---------------------------------------------------------------------------
+_compact_mode = False
+
+def is_compact() -> bool:
+    """Check if compact output mode is active."""
+    return _compact_mode
+
+def set_compact(val: bool) -> None:
+    """Set compact output mode (called by DroveCli at dispatch time)."""
+    global _compact_mode
+    _compact_mode = val
+
 def print_dict(data: dict, level: int = 0):
+    if is_compact() and level == 0:
+        _print_dict_compact(data, "")
+        return
     for key, value in data.items():
         print(level * 4 * " ", end='')
         if type(value) is dict and not len(dict(value)) == 0:
@@ -18,17 +35,55 @@ def print_dict(data: dict, level: int = 0):
         else:
             print(f"{key: <30}{value}")
 
+def _print_dict_compact(data: dict, prefix: str):
+    """Print dict as key=value lines, flattening nested dicts with dot notation."""
+    for key, value in data.items():
+        full_key = f"{prefix}.{key}" if prefix else str(key)
+        if isinstance(value, dict) and len(value) > 0:
+            _print_dict_compact(value, full_key)
+        elif isinstance(value, list) and all(isinstance(n, dict) for n in value):
+            for i, item in enumerate(value):
+                _print_dict_compact(item, f"{full_key}[{i}]")
+        else:
+            print(f"{full_key}={value}")
+
 def print_json(data: dict):
-    print(json.dumps(data, indent = 4))
+    if is_compact():
+        print(json.dumps(data, separators=(',', ':')))
+    else:
+        print(json.dumps(data, indent = 4))
 
 def print_table(headers: list, data: list):
-    print(tabulate.tabulate(data, headers=headers))
+    if is_compact():
+        print("\t".join(str(h) for h in headers))
+        for row in data:
+            print("\t".join(str(c) for c in row))
+    else:
+        print(tabulate.tabulate(data, headers=headers))
 
 def print_dict_table(data: dict, headers: list = None):
-    if headers:
-        print(tabulate.tabulate(data, headers=headers))
+    if is_compact():
+        if headers:
+            header_keys = list(headers.keys()) if isinstance(headers, dict) else headers
+            header_names = list(headers.values()) if isinstance(headers, dict) else headers
+            print("\t".join(str(h) for h in header_names))
+            if isinstance(data, list):
+                for row in data:
+                    print("\t".join(str(row.get(k, "")) for k in header_keys))
+            elif isinstance(data, dict):
+                for row in data.values() if isinstance(data, dict) else data:
+                    print("\t".join(str(row.get(k, "") if isinstance(row, dict) else row) for k in header_keys))
+        else:
+            if isinstance(data, list) and len(data) > 0:
+                keys = list(data[0].keys()) if isinstance(data[0], dict) else []
+                print("\t".join(keys))
+                for row in data:
+                    print("\t".join(str(row.get(k, "")) for k in keys))
     else:
-        print(tabulate.tabulate(data, headers="keys"))
+        if headers:
+            print(tabulate.tabulate(data, headers=headers))
+        else:
+            print(tabulate.tabulate(data, headers="keys"))
                             
 def to_date(epoch: int) -> str:
     date = datetime.datetime.fromtimestamp(epoch/1000)
