@@ -23,7 +23,8 @@ pytestmark = pytest.mark.offline
 
 SEPARATOR = "=" * 72
 EXPECTED_SECTIONS = 80          # 1 root + 9 plugin groups + ~70 sub-commands
-EXPECTED_LINES    = 981         # total line count of verbose full-help output
+MIN_EXPECTED_LINES = 975        # lower bound for verbose full-help line count
+MAX_EXPECTED_LINES = 1000       # upper bound (argparse wrapping varies by Python version)
 
 # All top-level plugin groups that must appear in the output
 TOP_LEVEL_GROUPS = [
@@ -237,8 +238,8 @@ class TestVerboseHelpExitAndBasics:
     def test_output_line_count(self, offline_env):
         result = _run_full_help(extra_args=["--verbose"])
         lines = result.stdout.splitlines()
-        assert len(lines) == EXPECTED_LINES, (
-            f"Expected {EXPECTED_LINES} lines, got {len(lines)}"
+        assert MIN_EXPECTED_LINES <= len(lines) <= MAX_EXPECTED_LINES, (
+            f"Expected {MIN_EXPECTED_LINES}–{MAX_EXPECTED_LINES} lines, got {len(lines)}"
         )
 
     def test_works_without_drove_endpoint(self, offline_env):
