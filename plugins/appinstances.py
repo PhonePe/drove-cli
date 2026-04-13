@@ -41,7 +41,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.add_argument("instance_id", metavar="instance-id", help="Application Instance ID")
         sub_parser.add_argument("--log", "-l", default = "output.log", help="Log filename to tail. Default is to tail output.log")
-        sub_parser.add_argument("--skip-chars", "--skipChars", "-S", type=int, default=67, help="Skip N leading characters per log line before printing")
+        sub_parser.add_argument("--skip-chars", "--skipChars", "-S", type=int, default=0, help="Skip N leading characters per log line before printing (e.g. --skip-chars 67 to hide drove log prefix)")
         sub_parser.set_defaults(func=self.log_tail)
 
         sub_parser = commands.add_parser("download", help="Download log for application instance")
