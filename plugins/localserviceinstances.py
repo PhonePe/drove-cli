@@ -41,6 +41,7 @@ class LocalServices(plugins.DrovePlugin):
         sub_parser.add_argument("service_id", metavar="service-id", help="Local Service ID")
         sub_parser.add_argument("instance_id", metavar="instance-id", help="Local Service Instance ID")
         sub_parser.add_argument("--log", "-l", default = "output.log", help="Log filename to tail. Default is to tail output.log")
+        sub_parser.add_argument("--skip-chars", "--skipChars", "-S", type=int, default=0, help="Skip N leading characters per log line before printing (e.g. --skip-chars 67 to hide drove log prefix)")
         sub_parser.set_defaults(func=self.log_tail)
 
         sub_parser = commands.add_parser("download", help="Download log for local service instance")
@@ -124,7 +125,7 @@ class LocalServices(plugins.DrovePlugin):
         droveutils.list_logs(self.drove_client, "localservices", options.service_id, options.instance_id)
 
     def log_tail(self, options):
-        droveutils.tail_log(self.drove_client, "localservices", options.service_id, options.instance_id, options.log)
+        droveutils.tail_log(self.drove_client, "localservices", options.service_id, options.instance_id, options.log, options.skip_chars)
         
     def log_download(self, options):
         filename = options.servicelogfile

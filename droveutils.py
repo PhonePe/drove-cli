@@ -49,7 +49,7 @@ def list_logs(drove_client: droveclient.DroveClient, prefix: str, domain: str, i
     data = drove_client.get_raw("/apis/v1/logfiles/{prefix}/{domain}/{id}/list".format(prefix=prefix, domain=domain, id=id))
     print_dict(data)
 
-def tail_log(drove_client: droveclient.DroveClient, prefix: str, domain: str, id: str, file_name: str):
+def tail_log(drove_client: droveclient.DroveClient, prefix: str, domain: str, id: str, file_name: str, skip_chars: int = 0):
     offset:int = -1
     old_offset:int = -1
     while True:
@@ -61,11 +61,15 @@ def tail_log(drove_client: droveclient.DroveClient, prefix: str, domain: str, id
             offset = int(data["offset"])
         else:
             offset = offset + data_length
-        
+
         if data_length == 0:
             time.sleep(1) #Nothing available right now .. try a bit later. TODO: binary backoff overkill here?
         else:
-            print(data["data"], end='')
+            if skip_chars > 0:
+                for line in data["data"].splitlines(True):
+                    print(line[skip_chars:], end='')
+            else:
+                print(data["data"], end='')
 
 def download_log(drove_client: droveclient.DroveClient, prefix: str, domain: str, id: str, file_name: str, outfilename: str):
     print("Downloading log to: " + outfilename)
