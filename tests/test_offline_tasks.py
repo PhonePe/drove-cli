@@ -10,6 +10,10 @@ Kill sets the task to STOPPED.  `tasks list` only returns RUNNING tasks
 `tasks show` works for both RUNNING and terminal-state tasks.
 """
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 import pytest
 
 pytestmark = pytest.mark.offline
@@ -19,6 +23,23 @@ pytestmark = pytest.mark.offline
 #   TASK_ID     = "T0012"         (taskId in sample/test_task.json)
 #   APP_SPEC    = sample/test_app.json  (name=TEST_APP → ID TEST_APP-1)
 from conftest import TASK_SOURCE, TASK_ID, APP_SPEC, TASK_SPEC
+
+
+def local_drove(*args, timeout=30):
+    cli_dir = Path(__file__).resolve().parents[1]
+    cmd = ["python3", "drove.py"]
+    endpoint = os.environ.get("DROVE_ENDPOINT")
+    if endpoint:
+        cmd += ["-e", endpoint]
+    cmd += list(args)
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        cwd=str(cli_dir),
+        env=os.environ.copy(),
+    )
 
 
 @pytest.fixture(scope="module")
@@ -119,3 +140,43 @@ class TestOfflineTaskLifecycle:
         if result.returncode == 0:
             data = json.loads(result.stdout)
             assert isinstance(data, dict)
+
+class TestOfflineTaskCliRegressions:
+    def test_tasks_tail_log_flag_does_not_override_global_config_file(self):
+        cli_dir = Path(__file__).resolve().parents[1]
+        sys.path.insert(0, str(cli_dir))
+        try:
+            import drove as drove_entry
+            import drovecli as drove_cli
+
+            parser = drove_entry.build_parser()
+            client = drove_cli.DroveCli(parser)
+            args = client.parser.parse_args([
+                "tasks", "tail", TASK_SOURCE, TASK_ID, "--log", "output.log"
+            ])
+
+            assert args.log == "output.log"
+            assert args.file is None
+        finally:
+            sys.path.pop(0)
+
+    def test_describe_task_uses_top_level_host_fields(self, app_for_offline_tasks):
+        from conftest import drove, drove_ok
+
+        drove("tasks", "kill", TASK_SOURCE, TASK_ID, check=False, timeout=10)
+        drove_ok("tasks", "create", TASK_SPEC, timeout=10)
+
+        result = local_drove("describe", "task", TASK_SOURCE, TASK_ID, timeout=10)
+        assert result.returncode == 0
+        assert "Hostname:" in result.stdout
+        assert "exec-host-1" in result.stdout
+        assert "Executor ID:" in result.stdout
+
+    def test_missing_config_file_does_not_trigger_none_type_crash(self):
+        result = local_drove(
+            "-f", "/tmp/__missing_drove_config__.json", "tasks", "list", timeout=10
+        )
+
+        assert "unsupported operand type" not in result.stdout.lower()
+        assert "unsupported operand type" not in result.stderr.lower()
+

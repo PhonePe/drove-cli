@@ -48,7 +48,7 @@ class Tasks(plugins.DrovePlugin):
         sub_parser = commands.add_parser("tail", help="Tail log for task")
         sub_parser.add_argument("source_app", metavar="source-app", help="Name of the Drove application that started the task")
         sub_parser.add_argument("task_id", metavar="task-id", help="Task ID")
-        sub_parser.add_argument("--file", "-f", default = "output.log", help="Log filename to tail. Default is to tail output.log")
+        sub_parser.add_argument("--log", "-l", default = "output.log", help="Log filename to tail. Default is to tail output.log")
         sub_parser.set_defaults(func=self.log_tail)
 
         sub_parser = commands.add_parser("download", help="Download log for task")
@@ -149,7 +149,7 @@ class Tasks(plugins.DrovePlugin):
         droveutils.list_logs(self.drove_client, "tasks", options.source_app, options.task_id)
 
     def log_tail(self, options):
-        droveutils.tail_log(self.drove_client, "tasks", options.source_app, options.task_id, options.file)
+        droveutils.tail_log(self.drove_client, "tasks", options.source_app, options.task_id, options.log)
         
     def log_download(self, options):
         filename = options.tasklogfile

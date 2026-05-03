@@ -11,12 +11,32 @@ tests/fixtures/offline_test_service.json — a separate service that does
 not conflict with the seeded EXISTING_SVC (TEST_LOCAL_SERVICE-1).
 """
 import json
+import os
+import subprocess
+from pathlib import Path
 import pytest
 
 pytestmark = pytest.mark.offline
 
 EXISTING_SVC = "TEST_LOCAL_SERVICE-1"
 CLI_SVC_ID   = "OFFLINE_TEST_SERVICE-1"   # lifecycle tests use offline_test_service.json
+
+
+def local_drove(*args, timeout=30):
+    cli_dir = Path(__file__).resolve().parents[1]
+    cmd = ["python3", "drove.py"]
+    endpoint = os.environ.get("DROVE_ENDPOINT")
+    if endpoint:
+        cmd += ["-e", endpoint]
+    cmd += list(args)
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        cwd=str(cli_dir),
+        env=os.environ.copy(),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -240,3 +260,11 @@ class TestOfflineDescribeLsInstance:
                        inst_id, "--json")
         data = json.loads(out)
         assert isinstance(data, dict)
+
+    def test_describe_lsinstance_uses_top_level_host_fields(self, seeded_active_svc):
+        inst_id = _get_ls_instance_id(seeded_active_svc)
+        result = local_drove("describe", "lsinstance", seeded_active_svc, inst_id)
+        assert result.returncode == 0
+        assert "Hostname:" in result.stdout
+        assert "exec-host-1" in result.stdout
+        assert "Executor ID:" in result.stdout
