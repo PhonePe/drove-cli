@@ -149,16 +149,8 @@ _APP_INSTANCE_SEED = {
     "appId": "TEST_APP-1",
     "appName": "TEST_APP",
     "executorId": EXECUTOR_ID,
-    "localInfo": {
-        "hostname": "exec-host-1",
-        "ports": {
-            "main": {
-                "hostPort": 32000,
-                "containerPort": 8080,
-                "portType": "TCP",
-            }
-        },
-    },
+    "hostname": "exec-host-1",
+    "localInfo": {},
     "state": "HEALTHY",
     "errorMessage": "",
     "resources": [
@@ -347,16 +339,8 @@ class DroveState:
                     "appId": app_id,
                     "appName": app["summary"]["name"],
                     "executorId": self.executor_info["state"]["executorId"],
-                    "localInfo": {
-                        "hostname": "exec-host-1",
-                        "ports": {
-                            "main": {
-                                "hostPort": 32000 + i,
-                                "containerPort": 8080,
-                                "portType": "TCP",
-                            }
-                        },
-                    },
+                    "hostname": "exec-host-1",
+                    "localInfo": {},
                     "state": "HEALTHY",
                     "errorMessage": "",
                     "resources": [
@@ -440,16 +424,8 @@ class DroveState:
                 "serviceId": svc_id,
                 "serviceName": svc["summary"]["name"],
                 "executorId": self.executor_info["state"]["executorId"],
-                "localInfo": {
-                    "hostname": "exec-host-1",
-                    "ports": {
-                        "main": {
-                            "hostPort": 33000,
-                            "containerPort": 8080,
-                            "portType": "TCP",
-                        }
-                    },
-                },
+                "hostname": "exec-host-1",
+                "localInfo": {},
                 "state": "HEALTHY",
                 "errorMessage": "",
                 "resources": [

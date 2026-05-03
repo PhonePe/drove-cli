@@ -131,14 +131,14 @@ drove apps destroy MY_APP-1
 ### Tail logs from a running instance
 ```bash
 drove appinstances list MY_APP-1          # find instance IDs
-drove appinstances tail MY_APP-1 AI-abc123
+drove appinstances tail MY_APP-1 AI-abc123 --log output.log
 ```
 
 ### Run a one-shot task and monitor it
 ```bash
 drove tasks create my_task.json
 drove tasks show  MY_APP T0042
-drove tasks tail  MY_APP T0042
+drove tasks tail  MY_APP T0042 --log output.log
 ```
 
 ### Activate a local service
@@ -147,6 +147,8 @@ drove localservices create   my_service.json
 drove localservices conftest MY_SVC-1      # validate with one instance first
 drove localservices activate MY_SVC-1
 drove localservices summary  MY_SVC-1
+drove lsinstances list       MY_SVC-1       # find local service instance IDs
+drove lsinstances tail       MY_SVC-1 SI-abc123 --log output.log
 ```
 
 ---

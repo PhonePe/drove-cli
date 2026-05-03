@@ -325,10 +325,12 @@ class Describe(plugins.DrovePlugin):
         print(f"  Updated:           {droveutils.to_date(raw.get('updated', 0))}")
 
         local_info = raw.get('localInfo', {})
-        if local_info:
+        host_name = local_info.get('hostname') or raw.get('hostname')
+        executor_id = local_info.get('executorId') or raw.get('executorId')
+        if host_name or executor_id:
             self._print_section("Host Information")
-            print(f"  Hostname:          {local_info.get('hostname', 'N/A')}")
-            print(f"  Executor ID:       {local_info.get('executorId', 'N/A')}")
+            print(f"  Hostname:          {host_name or 'N/A'}")
+            print(f"  Executor ID:       {executor_id or 'N/A'}")
 
             ports = local_info.get('ports', {})
             if ports:
@@ -396,10 +398,12 @@ class Describe(plugins.DrovePlugin):
         print(f"  Updated:           {droveutils.to_date(raw.get('updated', 0))}")
 
         local_info = raw.get('localInfo', {})
-        if local_info:
+        host_name = local_info.get('hostname') or raw.get('hostname')
+        executor_id = local_info.get('executorId') or raw.get('executorId')
+        if host_name or executor_id:
             self._print_section("Host Information")
-            print(f"  Hostname:          {local_info.get('hostname', 'N/A')}")
-            print(f"  Executor ID:       {local_info.get('executorId', 'N/A')}")
+            print(f"  Hostname:          {host_name or 'N/A'}")
+            print(f"  Executor ID:       {executor_id or 'N/A'}")
 
             ports = local_info.get('ports', {})
             if ports:
@@ -547,10 +551,12 @@ class Describe(plugins.DrovePlugin):
         print(f"  Updated:           {droveutils.to_date(raw.get('updated', 0))}")
 
         local_info = raw.get('localInfo', {})
-        if local_info:
+        host_name = local_info.get('hostname') or raw.get('hostname')
+        executor_id = local_info.get('executorId') or raw.get('executorId')
+        if host_name or executor_id:
             self._print_section("Host Information")
-            print(f"  Hostname:          {local_info.get('hostname', 'N/A')}")
-            print(f"  Executor ID:       {local_info.get('executorId', 'N/A')}")
+            print(f"  Hostname:          {host_name or 'N/A'}")
+            print(f"  Executor ID:       {executor_id or 'N/A'}")
 
             ports = local_info.get('ports', {})
             if ports:

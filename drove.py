@@ -53,36 +53,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-
-def get_parser():
-    parser = build_parser()
-    client = None
-    client = drovecli.DroveCli(parser)
-    return client.parser
-
-
-def run():
-    parser = build_parser()
-    client = None
-    try:
-        client = drovecli.DroveCli(parser)
-        client.run()
-    except (BrokenPipeError, IOError, KeyboardInterrupt):
-        pass
-    except droveclient.DroveException as e:
-        debug = True if client is not None and client.debug else False
-        droveutils.print_drove_error(e, debug)
-        if debug:
-            traceback.print_exc()
-
-    except Exception as e:
-        print("Drove CLI error: " + str(e))
-        debug = True if client is not None and client.debug else False
-        if debug:
-            traceback.print_exc()
-        else:
-            parser.print_help()
-
-if __name__ == '__main__':
-    run()

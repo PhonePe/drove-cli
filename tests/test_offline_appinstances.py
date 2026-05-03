@@ -8,12 +8,32 @@ Run with:  pytest -m offline tests/test_offline_appinstances.py
 The mock server seeds TEST_APP-1 with one HEALTHY instance (AI-test-app-inst-001).
 """
 import json
+import os
+import subprocess
+from pathlib import Path
 import pytest
 
 pytestmark = pytest.mark.offline
 
 SEEDED_APP_ID   = "TEST_APP-1"
 SEEDED_INST_ID  = "AI-test-app-inst-001"
+
+
+def local_drove(*args, timeout=30):
+    cli_dir = Path(__file__).resolve().parents[1]
+    cmd = ["python3", "drove.py"]
+    endpoint = os.environ.get("DROVE_ENDPOINT")
+    if endpoint:
+        cmd += ["-e", endpoint]
+    cmd += list(args)
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        cwd=str(cli_dir),
+        env=os.environ.copy(),
+    )
 
 
 def _get_instance_id(app_id: str) -> str:
@@ -103,3 +123,10 @@ class TestOfflineDescribeInstance:
         from conftest import drove_ok
         out = drove_ok("describe", "instance", SEEDED_APP_ID, SEEDED_INST_ID)
         assert "TEST_APP" in out or SEEDED_INST_ID in out
+
+    def test_describe_instance_uses_top_level_host_fields(self, offline_env):
+        result = local_drove("describe", "instance", SEEDED_APP_ID, SEEDED_INST_ID)
+        assert result.returncode == 0
+        assert "Hostname:" in result.stdout
+        assert "exec-host-1" in result.stdout
+        assert "Executor ID:" in result.stdout

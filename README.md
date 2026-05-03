@@ -110,6 +110,13 @@ drove -c prod apps info <app-name>
 
 Use `drove -h` or `drove <command> -h` for detailed help.
 
+### Task Logs
+
+```bash
+# Tail task logs (default log file: output.log)
+drove tasks tail <source-app> <task-id> --log output.log
+```
+
 ## Global Options
 
 ```
