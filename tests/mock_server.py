@@ -123,7 +123,20 @@ _EXECUTOR_INFO_SEED = {
     },
     # Running instances (empty by default; populated during test lifecycle)
     "instances": [],
-    "tasks": [],
+    "tasks": [
+        {
+            "instanceId": "TI-mock-task-001",
+            "sourceAppName": "TEST_APP",
+            "taskId": "T0012",
+            "state": "RUNNING",
+            "resources": [
+                {"type": "CPU", "cores": {"0": [0, 1]}},
+                {"type": "MEMORY", "memoryInMB": {"0": 256}},
+            ],
+            "created": 1700000020000,
+            "updated": 1700000020000,
+        },
+    ],
     "serviceInstances": [],
 }
 

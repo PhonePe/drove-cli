@@ -34,6 +34,7 @@ class Executors(plugins.DrovePlugin):
 
         sub_parser = commands.add_parser("tasks", help="Show tasks running on this executor")
         sub_parser.add_argument("executor_id", metavar="executor-id", help="Executor id for which info is to be shown")
+        sub_parser.add_argument("--app", "-a", help="Show tasks only for the given source app", type=str)
         sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 6), default = 1)
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.show_tasks)
