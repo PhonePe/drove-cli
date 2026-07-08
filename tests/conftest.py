@@ -28,6 +28,10 @@ Environment Variables (override ~/.drove — used by live tests):
 import json
 import os
 import subprocess
+import sys
+import time
+import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -44,8 +48,8 @@ FIXTURES_DIR = TESTS_DIR / "fixtures"
 # ---------------------------------------------------------------------------
 
 def _base_cmd() -> list[str]:
-    """Build the base `drove` command with optional env overrides."""
-    cmd = ["drove"]
+    """Build the base `drove` command, always using the local source tree."""
+    cmd = [sys.executable, str(TESTS_DIR.parent / "drove.py")]
     endpoint = os.environ.get("DROVE_ENDPOINT")
     cluster  = os.environ.get("DROVE_CLUSTER")
     username = os.environ.get("DROVE_USERNAME")
