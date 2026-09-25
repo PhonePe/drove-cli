@@ -1,4 +1,5 @@
 {
+    "type": "COMPUTATION",
     "sourceAppName": "TEST_APP",
     "taskId": "T0012",
     "executable": {
@@ -18,7 +19,7 @@
         }
     ],
     "env": {
-        "ITERATIONS" : "10"
+        "ITERATIONS": "10"
     },
     "placementPolicy": {
         "type": "ANY"
