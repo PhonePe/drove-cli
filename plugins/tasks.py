@@ -132,6 +132,7 @@ class Tasks(plugins.DrovePlugin):
         droveutils.populate_resources(raw, data)
         data["Executable"] = "{url} ({type})".format_map(raw.get("executable", {}))
         data["Volumes"] = ", ".join(["{pathOnHost} (Mounted as {pathInContainer} in {mode} mode)".format_map(v) for v in raw.get("volumes", [])])
+        data["Logging Mode"] = raw.get("logging", dict()).get("type", "")
         data["Metadata"] = ", ".join(["%s: %s" % (key,value) for (key, value) in raw.get("metadata", dict())])
         result = raw.get("taskResult", dict())
         if len(result) > 0:
