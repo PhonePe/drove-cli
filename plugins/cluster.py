@@ -41,6 +41,14 @@ class Cluster(plugins.DrovePlugin):
         sub_parser.add_argument("--textfmt", "-s", help="Use the format string to print message", type=str, default="{type: <25} | {id: <36} | {time: <20} | {metadata}")
         sub_parser.set_defaults(func=self.handle_events)
 
+        simulation_parser = commands.add_parser("simulate-placement", help="Simulate placement for a deployable (app, task or local service spec)")
+        simulation_parser.add_argument("spec_file", help="Deployment spec file (application, task or local service JSON)")
+        simulation_parser.add_argument("--num-instances", "-n", help="Number of instances to simulate placement for. Default is 1", default=1, type=int)
+        simulation_parser.add_argument("--placement-policy", help="JSON file with a placement policy to override the spec policy")
+        simulation_parser.add_argument("--detail", help="Show per-instance placement details", default=False, action="store_true")
+        simulation_parser.add_argument("--json", help="Print raw JSON response", default=False, action="store_true")
+        simulation_parser.set_defaults(func=self.simulate_placement)
+
         maintenance_parser = commands.add_parser("maintenance-on", help="Set cluster to maintenance mode")
         maintenance_parser.set_defaults(func=self.set_maintenance)
 
@@ -121,6 +129,57 @@ class Cluster(plugins.DrovePlugin):
                   .format(status = e.status_code, message = str(e), raw = e.raw))
         except Exception as e:
             print("Error setting drove cluster to normal mode: " + str(e))
+
+    def simulate_placement(self, options: SimpleNamespace):
+        try:
+            with open(options.spec_file, 'r') as fp:
+                spec = json.load(fp)
+            placement_policy = None
+            if options.placement_policy:
+                with open(options.placement_policy, 'r') as fp:
+                    placement_policy = json.load(fp)
+            request_body = {
+                "spec": spec,
+                "numInstances": options.num_instances
+            }
+            if placement_policy is not None:
+                request_body["placementPolicy"] = placement_policy
+            response = self.drove_client.post("/apis/v1/cluster/placement/simulate",
+                                              body=request_body,
+                                              params={"detail": "true" if options.detail else "false"})
+            if options.json:
+                droveutils.print_json(response)
+                return
+            placements = response.get("placements", [])
+            errors = response.get("errors", [])
+            print("Placement simulation for {spec}".format(spec=options.spec_file))
+            print("Requested instances: {requested}".format(requested=response.get("requested", 0)))
+            print("Placed instances:    {placed}".format(placed=response.get("placed", 0)))
+            print("Errors:              {errors}".format(errors=len(errors)))
+            for error in errors:
+                print("  - {error}".format(error=error))
+            if options.detail and len(placements) > 0:
+                rows = []
+                for placement in placements:
+                    rows.append([
+                        placement.get("executorId", ""),
+                        placement.get("hostname", ""),
+                        placement.get("port", ""),
+                        placement.get("executorState", "")
+                    ])
+                droveutils.print_table(["Executor Id", "Hostname", "Port", "State"], rows)
+        except (OSError, IOError) as e:
+            print("Error reading simulation input: " + str(e))
+        except droveclient.DroveException as e:
+            errors = []
+            if e.api_response is not None:
+                errors = e.api_response.get("data", []).get("errors", []) \
+                    if isinstance(e.api_response.get("data", []), dict) else []
+            print("Placement simulation failed: {message}".format(message=str(e)))
+            for error in errors:
+                print("  - {error}".format(error=error))
+        except Exception as e:
+            print("Error simulating placement: " + str(e))
 
     def convert_event(self, format: str, event: dict) -> str:
         data = dict()

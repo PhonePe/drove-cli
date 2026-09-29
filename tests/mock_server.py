@@ -638,6 +638,60 @@ def create_app(state: DroveState | None = None) -> Flask:
     def executor_unblacklist():
         return ok({"successful": [], "failed": []})
 
+    @app.route("/apis/v1/cluster/placement/simulate", methods=["POST"])
+    def placement_simulate():
+        body = request.get_json(force=True, silent=True)
+        if not isinstance(body, dict):
+            return jsonify({"status": "FAILED",
+                            "data": {"validationErrors": ["Invalid request body"]},
+                            "message": "JSON validation failure"}), 400
+        spec = body.get("spec") or {}
+        if "type" not in spec:
+            # Matches the real Drove error for a spec without a type discriminator
+            return jsonify({"status": "FAILED",
+                            "data": {"validationErrors":
+                                         ["Could not resolve subtype of [simple type, class "
+                                          "com.phonepe.drove.models.interfaces.DeploymentSpec]: "
+                                          "missing type id property 'type' (for POJO property 'spec')"]},
+                            "message": "JSON validation failure"}), 400
+        num_instances = body.get("numInstances", 1)
+        if not isinstance(num_instances, int) or num_instances < 1 or num_instances > 2048:
+            return jsonify({"status": "FAILED",
+                            "data": {"validationErrors":
+                                         ["numInstances must be between 1 and 2048"]},
+                            "message": "JSON validation failure"}), 400
+        resources = spec.get("resources", [])
+        cores = next((r.get("count", 0) for r in resources
+                      if r.get("type") == "CPU"), 0)
+        memory = next((r.get("sizeInMB", 0) for r in resources
+                       if r.get("type") == "MEMORY"), 0)
+        free_executor = state.executor_list_entry
+        max_by_cores = free_executor["freeCores"] // cores if cores > 0 else num_instances
+        max_by_memory = free_executor["freeMemory"] // memory if memory > 0 else num_instances
+        placed = min(num_instances, max_by_cores, max_by_memory)
+        detail = request.args.get("detail", "false").lower() == "true"
+        placements = []
+        if detail:
+            for _ in range(placed):
+                placements.append({
+                    "executorId": free_executor["executorId"],
+                    "hostname": free_executor["hostname"],
+                    "port": free_executor["port"],
+                    "transportType": free_executor["transportType"],
+                    "executorState": "ACTIVE",
+                    "tags": free_executor.get("tags", []),
+                })
+        errors = []
+        if placed < num_instances:
+            errors.append(
+                "Cluster can place only {placed} of {requested} requested instances".format(
+                    placed=placed, requested=num_instances))
+        return ok({
+            "requested": num_instances,
+            "placed": placed,
+            "errors": errors,
+            "placements": placements,
+        })
     # ------------------------------------------------------------------ apps
     @app.route("/apis/v1/applications")
     def apps_list():

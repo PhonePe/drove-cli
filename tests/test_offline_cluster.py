@@ -95,3 +95,93 @@ class TestOfflineDescribeCluster:
         from conftest import drove_ok
         out = drove_ok("describe", "cluster")
         assert "Executor" in out or "exec" in out.lower()
+
+
+class TestOfflineClusterSimulatePlacement:
+    """Offline tests for `drove cluster simulate-placement`."""
+
+    SIM_SPEC = {
+        "type": "COMPUTATION",
+        "sourceAppName": "TEST_APP",
+        "taskId": "SIM001",
+        "executable": {
+            "type": "DOCKER",
+            "url": "ghcr.io/appform-io/test-task",
+            "dockerPullTimeout": "100 seconds",
+        },
+        "resources": [
+            {"type": "CPU", "count": 1},
+            {"type": "MEMORY", "sizeInMB": 512},
+        ],
+        "placementPolicy": {"type": "ANY"},
+    }
+
+    @pytest.fixture()
+    def sim_spec_file(self, tmp_path):
+        spec_file = tmp_path / "sim_task.json"
+        spec_file.write_text(json.dumps(self.SIM_SPEC))
+        return str(spec_file)
+
+    def test_simulate_placement_succeeds(self, offline_env, sim_spec_file):
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement", sim_spec_file,
+                       "--num-instances", "2")
+        assert "Requested instances: 2" in out, f"Unexpected output: {out}"
+        assert "Placed instances:    2" in out, f"Unexpected output: {out}"
+        assert "Errors:              0" in out, f"Unexpected output: {out}"
+
+    def test_simulate_placement_default_one_instance(self, offline_env, sim_spec_file):
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement", sim_spec_file)
+        assert "Requested instances: 1" in out, f"Unexpected output: {out}"
+
+    def test_simulate_placement_detail_shows_placements(self, offline_env, sim_spec_file):
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement", sim_spec_file,
+                      "--num-instances", "2", "--detail")
+        assert "Executor Id" in out, f"Expected placement table in output: {out}"
+        assert "exec-host-1" in out, f"Expected seed executor in placements: {out}"
+
+    def test_simulate_placement_json_output(self, offline_env, sim_spec_file):
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement", sim_spec_file,
+                       "--num-instances", "2", "--json")
+        data = json.loads(out)
+        assert data["requested"] == 2
+        assert data["placed"] == 2
+        assert data["errors"] == []
+        assert data["placements"] == []
+
+    def test_simulate_placement_json_detail_has_placements(self, offline_env, sim_spec_file):
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement", sim_spec_file,
+                       "--num-instances", "2", "--detail", "--json")
+        data = json.loads(out)
+        assert len(data["placements"]) == 2
+        placement = data["placements"][0]
+        assert placement["hostname"] == "exec-host-1"
+        assert placement["executorState"] == "ACTIVE"
+
+    def test_simulate_placement_over_capacity_reports_shortfall(self, offline_env, sim_spec_file):
+        """Seed executor: 8 free cores, 2048 MB. One instance needs 1 core,
+        512 MB — so at most 4 instances can be placed."""
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement", sim_spec_file,
+                       "--num-instances", "100")
+        assert "Placed instances:    4" in out, f"Unexpected output: {out}"
+        assert "Cluster can place only 4 of 100" in out, f"Unexpected output: {out}"
+
+    def test_simulate_placement_spec_without_type_fails(self, offline_env):
+        from conftest import drove_ok
+        bad_spec = {k: v for k, v in self.SIM_SPEC.items() if k != "type"}
+        with open("/tmp/sai/23729860-4dae-4f67-b7d5-29d69883e573/scratch/bad_sim_spec.json", "w") as fp:
+            json.dump(bad_spec, fp)
+        out = drove_ok("cluster", "simulate-placement",
+                       "/tmp/sai/23729860-4dae-4f67-b7d5-29d69883e573/scratch/bad_sim_spec.json")
+        assert "Placement simulation failed" in out, f"Unexpected output: {out}"
+
+    def test_simulate_placement_missing_file_fails(self, offline_env):
+        from conftest import drove_ok
+        out = drove_ok("cluster", "simulate-placement",
+                       "/tmp/sai/23729860-4dae-4f67-b7d5-29d69883e573/scratch/no_such_spec.json")
+        assert "Error reading simulation input" in out, f"Unexpected output: {out}"

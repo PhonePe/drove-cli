@@ -25,9 +25,9 @@ pytestmark = pytest.mark.offline
 # ── constants ────────────────────────────────────────────────────────────────
 
 SEPARATOR = "=" * 72
-EXPECTED_SECTIONS = 80          # 1 root + 9 plugin groups + ~70 sub-commands
+EXPECTED_SECTIONS = 81          # 1 root + 9 plugin groups + ~71 sub-commands
 MIN_EXPECTED_LINES = 975        # lower bound (argparse wrapping varies by Python version)
-MAX_EXPECTED_LINES = 1000       # upper bound
+MAX_EXPECTED_LINES = 1025       # upper bound
 
 # All top-level plugin groups that must appear in the output
 TOP_LEVEL_GROUPS = [

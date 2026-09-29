@@ -124,15 +124,14 @@ class Tasks(plugins.DrovePlugin):
     def show_task(self, options: SimpleNamespace):
         raw = self.drove_client.get("/apis/v1/tasks/{source_app}/instances/{task_id}".format(source_app = options.source_app, task_id = options.task_id))
         data = OrderedDict()
-        data["Source App"] = raw["sourceAppName"]
-        data["Task ID"] = raw["taskId"]
-        data["Instance ID"] = raw["instanceId"]
-        data["State"] = raw["state"]
-        data["Executor Host"] = raw["hostname"]
+        data["Source App"] = raw.get("sourceAppName", "")
+        data["Task ID"] = raw.get("taskId", "")
+        data["Instance ID"] = raw.get("instanceId", "")
+        data["State"] = raw.get("state", "")
+        data["Executor Host"] = raw.get("hostname", "")
         droveutils.populate_resources(raw, data)
-        data["Executable"] = "{url} ({type})".format_map(raw["executable"])
-        data["Volumes"] = ", ".join(["{pathOnHost} (Mounted as {pathInContainer} in {mode} mode)".format_map(v) for v in raw["volumes"]])
-        data["Logging Mode"] = raw.get("logging", dict()).get("type", "")
+        data["Executable"] = "{url} ({type})".format_map(raw.get("executable", {}))
+        data["Volumes"] = ", ".join(["{pathOnHost} (Mounted as {pathInContainer} in {mode} mode)".format_map(v) for v in raw.get("volumes", [])])
         data["Metadata"] = ", ".join(["%s: %s" % (key,value) for (key, value) in raw.get("metadata", dict())])
         result = raw.get("taskResult", dict())
         if len(result) > 0:
