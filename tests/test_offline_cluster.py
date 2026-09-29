@@ -171,17 +171,16 @@ class TestOfflineClusterSimulatePlacement:
         assert "Placed instances:    4" in out, f"Unexpected output: {out}"
         assert "Cluster can place only 4 of 100" in out, f"Unexpected output: {out}"
 
-    def test_simulate_placement_spec_without_type_fails(self, offline_env):
+    def test_simulate_placement_spec_without_type_fails(self, offline_env, tmp_path):
         from conftest import drove_ok
         bad_spec = {k: v for k, v in self.SIM_SPEC.items() if k != "type"}
-        with open("/tmp/sai/23729860-4dae-4f67-b7d5-29d69883e573/scratch/bad_sim_spec.json", "w") as fp:
-            json.dump(bad_spec, fp)
-        out = drove_ok("cluster", "simulate-placement",
-                       "/tmp/sai/23729860-4dae-4f67-b7d5-29d69883e573/scratch/bad_sim_spec.json")
+        bad_spec_file = tmp_path / "bad_sim_spec.json"
+        bad_spec_file.write_text(json.dumps(bad_spec))
+        out = drove_ok("cluster", "simulate-placement", str(bad_spec_file))
         assert "Placement simulation failed" in out, f"Unexpected output: {out}"
 
-    def test_simulate_placement_missing_file_fails(self, offline_env):
+    def test_simulate_placement_missing_file_fails(self, offline_env, tmp_path):
         from conftest import drove_ok
-        out = drove_ok("cluster", "simulate-placement",
-                       "/tmp/sai/23729860-4dae-4f67-b7d5-29d69883e573/scratch/no_such_spec.json")
+        missing_file = tmp_path / "no_such_spec.json"
+        out = drove_ok("cluster", "simulate-placement", str(missing_file))
         assert "Error reading simulation input" in out, f"Unexpected output: {out}"
