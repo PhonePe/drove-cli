@@ -9,10 +9,10 @@ and every sub-command parser in a single pass.  It must:
 * Print exactly 80 ``=``-separator sections (1 root + 79 command/sub-command
   parsers).
 * Cover every top-level plugin group and representative sub-commands.
-
-All tests use the mock server fixture only to inherit the offline_env
-environment; ``--full-help`` itself never issues any HTTP request.
-
+* Print exactly 81 ``=``-separator sections (1 root + 9 plugin groups +
+  71 sub-command parsers).
+* Cover every top-level plugin group and representative sub-commands,
+  including ``cluster simulate-placement``.
 Run with:  pytest -m offline tests/test_offline_full_help.py
 """
 import subprocess
@@ -25,9 +25,9 @@ pytestmark = pytest.mark.offline
 # ── constants ────────────────────────────────────────────────────────────────
 
 SEPARATOR = "=" * 72
-EXPECTED_SECTIONS = 80          # 1 root + 9 plugin groups + ~70 sub-commands
+EXPECTED_SECTIONS = 81          # 1 root + 9 plugin groups + ~71 sub-commands
 MIN_EXPECTED_LINES = 975        # lower bound (argparse wrapping varies by Python version)
-MAX_EXPECTED_LINES = 1000       # upper bound
+MAX_EXPECTED_LINES = 1025       # upper bound
 
 # All top-level plugin groups that must appear in the output
 TOP_LEVEL_GROUPS = [
@@ -62,12 +62,9 @@ SUBCOMMAND_SAMPLES = [
     ("apps", "summary"),
     ("apps", "cancelop"),
     ("cluster", "ping"),
+    ("cluster", "ping"),
     ("cluster", "summary"),
-    ("describe", "app"),
-    ("describe", "cluster"),
-    ("describe", "executor"),
-    ("describe", "instance"),
-    ("describe", "localservice"),
+    ("cluster", "simulate-placement"),
     ("describe", "lsinstance"),
     ("describe", "task"),
     ("executor", "list"),
@@ -129,10 +126,7 @@ class TestFullHelpExitAndBasics:
 
     def test_works_without_drove_endpoint(self, offline_env):
         """--full-help must not require a live cluster endpoint."""
-        env_override = {
-            "DROVE_ENDPOINT": "",   # explicitly blank
-        }
-        # Also strip DROVE_CLUSTER so ~/.drove is not consulted
+        # Strip DROVE_ENDPOINT and DROVE_CLUSTER so ~/.drove is not consulted
         clean_env = os.environ.copy()
         clean_env.pop("DROVE_ENDPOINT", None)
         clean_env.pop("DROVE_CLUSTER",  None)

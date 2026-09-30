@@ -1,9 +1,10 @@
 """
 tests/test_cluster.py — tests for `drove cluster` commands.
 
-Covers: ping, summary, leader, endpoints, describe cluster
+Covers: ping, summary, leader, endpoints, describe cluster, simulate-placement
 All tests are smoke/read-only (no mutation).
 """
+from pathlib import Path
 import pytest
 from conftest import drove_ok, drove
 
@@ -95,3 +96,33 @@ class TestDescribeCluster:
     def test_describe_cluster_contains_executors(self):
         out = drove_ok("describe", "cluster")
         assert "Executor" in out or "exec" in out.lower()
+
+
+# ---------------------------------------------------------------------------
+# drove cluster simulate-placement
+# ---------------------------------------------------------------------------
+
+class TestClusterSimulatePlacement:
+    """Simulation is read-only — safe to run against a live cluster."""
+
+    TASK_SPEC = str(Path(__file__).parent.parent / "sample" / "test_task.json")
+
+    def test_simulate_placement_succeeds(self):
+        out = drove_ok("cluster", "simulate-placement", self.TASK_SPEC,
+                       "--num-instances", "2")
+        assert "Requested instances: 2" in out, f"Unexpected output: {out}"
+        assert "Placed instances:    2" in out, f"Unexpected output: {out}"
+
+    def test_simulate_placement_json(self):
+        import json
+        out = drove_ok("cluster", "simulate-placement", self.TASK_SPEC,
+                       "--num-instances", "1", "--json")
+        data = json.loads(out)
+        assert data["requested"] == 1
+        assert "placed" in data
+        assert "errors" in data
+
+    def test_simulate_placement_detail_shows_executors(self):
+        out = drove_ok("cluster", "simulate-placement", self.TASK_SPEC,
+                       "--num-instances", "1", "--detail")
+        assert "Executor Id" in out, f"Expected placement table: {out}"

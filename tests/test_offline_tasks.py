@@ -105,6 +105,15 @@ class TestOfflineTaskLifecycle:
             f"Expected {TASK_ID} in tasks show output:\n{result.stdout}"
         )
 
+    def test_task_show_contains_logging_mode(self, app_for_offline_tasks):
+        from conftest import drove
+        result = drove("tasks", "show", TASK_SOURCE, TASK_ID,
+                       check=False, timeout=10)
+        assert result.returncode == 0
+        assert "Logging Mode" in result.stdout, (
+            f"Expected 'Logging Mode' in tasks show output:\n{result.stdout}"
+        )
+
     def test_task_logs_list(self, app_for_offline_tasks):
         from conftest import drove
         result = drove("tasks", "logs", TASK_SOURCE, TASK_ID,
