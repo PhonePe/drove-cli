@@ -128,7 +128,7 @@ class Tasks(plugins.DrovePlugin):
         data["Task ID"] = raw["taskId"]
         data["Instance ID"] = raw["instanceId"]
         data["State"] = raw["state"]
-        data["Executor Host"] = raw["hostname"]
+        data["Executor Host"] = raw.get("hostname", "unknown")
         droveutils.populate_resources(raw, data)
         data["Executable"] = "{url} ({type})".format_map(raw["executable"])
         data["Volumes"] = ", ".join(["{pathOnHost} (Mounted as {pathInContainer} in {mode} mode)".format_map(v) for v in raw["volumes"]])
