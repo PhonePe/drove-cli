@@ -1,8 +1,19 @@
+import argparse
 import datetime
 import droveclient
 import json
 import tabulate
 import time
+
+def parse_operation_metadata(value: str) -> dict[str, object]:
+    try:
+        metadata = json.loads(value)
+        json.dumps(metadata, allow_nan=False)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("metadata must be a JSON object with valid JSON values") from error
+    if not isinstance(metadata, dict):
+        raise argparse.ArgumentTypeError("metadata must be a JSON object")
+    return metadata
 
 def print_dict(data: dict, level: int = 0):
     for key, value in data.items():

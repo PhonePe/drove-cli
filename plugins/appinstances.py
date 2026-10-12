@@ -58,6 +58,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are replaced", default=False, action="store_true")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.replace)
 
         sub_parser = commands.add_parser("kill", help="Kill specific app instances")
@@ -66,6 +67,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are killed", default=False, action="store_true")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.kill)
 
         # sub_parser = commands.add_parser("create", help="Create application")
@@ -143,6 +145,8 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         if options.wait:
             self.ensure_replaced(options.app_id, set(options.instance_ids))
@@ -162,6 +166,8 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         if options.wait:
             self.ensure_replaced(options.app_id, set(options.instance_ids))
