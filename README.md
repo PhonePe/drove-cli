@@ -110,6 +110,22 @@ drove -c prod apps info <app-name>
 
 Use `drove -h` or `drove <command> -h` for detailed help.
 
+### Operation Metadata
+
+Supply an optional JSON object with `--metadata` on `apps create`, `destroy`,
+`deploy`, `scale`, `suspend`, `restart`, and `appinstances replace` or `kill`:
+
+```bash
+drove -c prod apps scale TEST_APP-1 3 \
+    --metadata '{"initiator":"ops","reason":"capacity","ticket":123}'
+```
+
+The object is sent as the top-level `operationMetadata` field, separate from
+the application spec and `opSpec`. Values can be nested JSON objects, arrays,
+strings, numbers, booleans, or null. The server must support operation metadata
+to use this option. Omitting it leaves the request unchanged for older servers.
+It is not supported for task or local-service commands.
+
 ### Task Logs
 
 ```bash

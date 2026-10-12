@@ -36,10 +36,12 @@ class Applications(plugins.DrovePlugin):
 
         sub_parser = commands.add_parser("create", help="Create application on cluster")
         sub_parser.add_argument("spec_file", metavar="spec-file", help="JSON spec file for the application")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.create_app)
         
         sub_parser = commands.add_parser("destroy", help="Destroy an app with zero instances")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.destroy_app)
 
         sub_parser = commands.add_parser("deploy", help="Deploy new app instances.")
@@ -48,6 +50,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.add_argument("--wait", "-w", help="Wait to ensure instance count is reached", default=False, action="store_true")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.deploy_app)
 
 
@@ -57,6 +60,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.add_argument("--wait", "-w", help="Wait to ensure instance count is reached", default=False, action="store_true")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.scale_app)
 
         sub_parser = commands.add_parser("suspend", help="Suspend the app")
@@ -64,6 +68,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are suspended", default=False, action="store_true")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.suspend_app)
 
         sub_parser = commands.add_parser("restart", help="Restart am existing app instances.")
@@ -71,6 +76,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser.add_argument("--parallelism", "-p", help="Number of parallel threads to be used to execute operation", type=int, default = 1)
         sub_parser.add_argument("--timeout", "-t", help="Timeout for the operation on the cluster", type=str, default = "5m")
         sub_parser.add_argument("--wait", "-w", help="Wait to ensure all instances are replaced", default=False, action="store_true")
+        sub_parser.add_argument("--metadata", metavar="JSON", type=droveutils.parse_operation_metadata, help="Optional operation metadata as a JSON object")
         sub_parser.set_defaults(func=self.restart_app)
 
         sub_parser = commands.add_parser("cancelop", help="Cancel current operation")
@@ -123,6 +129,8 @@ class Applications(plugins.DrovePlugin):
                     "failureStrategy": "STOP"
                 }
             }
+            if getattr(options, "metadata", None) is not None:
+                operation["operationMetadata"] = options.metadata
             data = self.drove_client.post("/apis/v1/applications/operations", operation)
             print("Application created with app id: {appid}".format(appid=data["appId"]))
         except (OSError, IOError) as e:
@@ -138,6 +146,8 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         print("Application destroyed")
 
@@ -152,6 +162,8 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         if options.wait:
             print("Waiting till required scale is reached")
@@ -170,6 +182,8 @@ class Applications(plugins.DrovePlugin):
                 "failureStrategy": "STOP"
             }
         }
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         if options.wait:
             print("Waiting till all instances shut down")
@@ -190,6 +204,8 @@ class Applications(plugins.DrovePlugin):
             }
         }
         existing_count = 0 if options.wait == False else len(self.drove_client.app_instances(options.app_id))
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         if options.wait:
             print("Waiting till required scale is reached")
@@ -209,6 +225,8 @@ class Applications(plugins.DrovePlugin):
             }
         }
         existing = [] if options.wait == False else self.drove_client.app_instances(options.app_id)
+        if getattr(options, "metadata", None) is not None:
+            operation["operationMetadata"] = options.metadata
         data = self.drove_client.post("/apis/v1/applications/operations", operation)
         if options.wait:
             self.ensure_replaced(options.app_id, set(existing))

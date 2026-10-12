@@ -5,7 +5,11 @@ commands.
 All tests use the mock Drove server; no live cluster is required.
 Run with:  pytest -m offline tests/test_offline_apps.py
 """
+import argparse
 import json
+from unittest.mock import Mock
+
+import plugins
 import pytest
 
 pytestmark = pytest.mark.offline
@@ -176,3 +180,73 @@ class TestOfflineAppsLifecycle:
         from conftest import drove_ok
         out = drove_ok("apps", "list")
         assert CLI_APP_ID not in out, f"{CLI_APP_ID} still appears after destroy"
+
+
+OPERATION_COMMANDS = [
+    (("apps", "create"), {"type": "CREATE"}),
+    (("apps", "destroy", CLI_APP_ID), {"type": "DESTROY", "appId": CLI_APP_ID}),
+    (("apps", "deploy", CLI_APP_ID, "2"), {"type": "START_INSTANCES", "appId": CLI_APP_ID, "instances": 2}),
+    (("apps", "scale", CLI_APP_ID, "2"), {"type": "SCALE", "appId": CLI_APP_ID, "requiredInstances": 2}),
+    (("apps", "suspend", CLI_APP_ID), {"type": "SUSPEND", "appId": CLI_APP_ID}),
+    (("apps", "restart", CLI_APP_ID), {"type": "REPLACE_INSTANCES", "appId": CLI_APP_ID}),
+    (("appinstances", "replace", CLI_APP_ID, "AI-test-1", "AI-test-2"),
+     {"type": "REPLACE_INSTANCES", "appId": CLI_APP_ID, "instanceIds": ["AI-test-1", "AI-test-2"]}),
+    (("appinstances", "kill", CLI_APP_ID, "AI-test-1", "AI-test-2"),
+     {"type": "STOP_INSTANCES", "appId": CLI_APP_ID, "instanceIds": ["AI-test-1", "AI-test-2"], "skipRespawn": True}),
+]
+
+
+class TestOfflineOperationMetadata:
+    @pytest.mark.parametrize("command, expected", OPERATION_COMMANDS)
+    @pytest.mark.parametrize("metadata", [None, {}, {
+        "initiator": "ops", "reason": "capacity", "ticket": 123,
+        "details": {"approved": True, "tags": ["manual"], "previous": None},
+    }])
+    def test_operation_payload(self, command, expected, metadata):
+        from conftest import APP_SPEC
+
+        client = Mock()
+        client.post.return_value = {"appId": CLI_APP_ID}
+        plugin = next(plugin_type() for plugin_type in plugins.DrovePlugin.plugins
+                      if plugin_type().name() == command[0])
+        parser = argparse.ArgumentParser()
+        plugin.populate_options(client, parser.add_subparsers())
+        args = list(command)
+        payload = dict(expected)
+        payload["opSpec"] = {"timeout": "5m", "parallelism": 1, "failureStrategy": "STOP"}
+        if command[1] == "create":
+            args.append(APP_SPEC)
+            with open(APP_SPEC) as spec_file:
+                payload["spec"] = json.load(spec_file)
+        if metadata is not None:
+            args += ["--metadata", json.dumps(metadata)]
+            payload["operationMetadata"] = metadata
+
+        options = parser.parse_args(args)
+        options.func(options)
+
+        client.post.assert_called_once_with("/apis/v1/applications/operations", payload)
+
+    @pytest.mark.parametrize("command, expected", OPERATION_COMMANDS)
+    @pytest.mark.parametrize("metadata", [
+        "not-json", "[]", "null", '"text"', "42", "true",
+        '{"value": NaN}', '{"value": Infinity}', '{"value": -Infinity}', '{"value": 1e400}',
+    ])
+    def test_invalid_metadata_rejected(self, command, expected, metadata, capsys):
+        from conftest import APP_SPEC
+
+        client = Mock()
+        plugin = next(plugin_type() for plugin_type in plugins.DrovePlugin.plugins
+                      if plugin_type().name() == command[0])
+        parser = argparse.ArgumentParser()
+        plugin.populate_options(client, parser.add_subparsers())
+        args = list(command)
+        if command[1] == "create":
+            args.append(APP_SPEC)
+
+        with pytest.raises(SystemExit) as error:
+            parser.parse_args(args + ["--metadata", metadata])
+
+        assert error.value.code == 2
+        assert "metadata must be a JSON object" in capsys.readouterr().err
+        client.post.assert_not_called()
