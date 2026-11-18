@@ -1,12 +1,14 @@
 import argparse
+from operator import itemgetter
+from types import SimpleNamespace
+
+import tenacity
+from tenacity import retry
+
 import droveclient
 import droveutils
 import plugins
-import tenacity
 
-from operator import itemgetter
-from tenacity import retry
-from types import SimpleNamespace
 
 class LocalServices(plugins.DrovePlugin):
     def __init__(self) -> None:
@@ -23,6 +25,7 @@ class LocalServices(plugins.DrovePlugin):
         sub_parser = commands.add_parser("list", help="List all local service instances")
         sub_parser.add_argument("service_id", metavar="service-id", help="Local Service ID")
         sub_parser.add_argument("--old", "-o", help="Show old instances", action="store_true")
+        sub_parser.add_argument("--filter", help="Show only rows matching the given text", type=str)
         sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 6), default = 0)
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.list_instances)
@@ -71,7 +74,7 @@ class LocalServices(plugins.DrovePlugin):
 
         # sub_parser = commands.add_parser("create", help="Create local service")
         # sub_parser.add_argument("definition", help="JSON local service definition")
-        
+
         super().populate_options(drove_client, parser)
 
 
@@ -101,6 +104,7 @@ class LocalServices(plugins.DrovePlugin):
             instance_row.append(droveutils.to_date(instance["updated"]))
 
             rows.append(instance_row)
+        rows = droveutils.filter_rows(rows, options.filter)
         rows = sorted(rows, key=itemgetter(options.sort), reverse=options.reverse)
         droveutils.print_table(headers, rows)
 
@@ -126,7 +130,7 @@ class LocalServices(plugins.DrovePlugin):
 
     def log_tail(self, options):
         droveutils.tail_log(self.drove_client, "localservices", options.service_id, options.instance_id, options.log, options.skip_chars)
-        
+
     def log_download(self, options):
         filename = options.servicelogfile
         if options.out and len(options.out) > 0:
