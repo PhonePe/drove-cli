@@ -1,13 +1,15 @@
 import argparse
+import json
+from operator import itemgetter
+from types import SimpleNamespace
+
+import tenacity
+from tenacity import retry
+
 import droveclient
 import droveutils
-import json
 import plugins
-import tenacity
 
-from operator import itemgetter
-from tenacity import retry
-from types import SimpleNamespace
 
 class Applications(plugins.DrovePlugin):
     def __init__(self) -> None:
@@ -22,6 +24,7 @@ class Applications(plugins.DrovePlugin):
         commands = parser.add_subparsers(help="Available commands for application management")
 
         sub_parser = commands.add_parser("list", help="List all applications")
+        sub_parser.add_argument("--filter", help="Show only rows matching the given text", type=str)
         sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 9), default = 0)
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.list_apps)
@@ -37,7 +40,7 @@ class Applications(plugins.DrovePlugin):
         sub_parser = commands.add_parser("create", help="Create application on cluster")
         sub_parser.add_argument("spec_file", metavar="spec-file", help="JSON spec file for the application")
         sub_parser.set_defaults(func=self.create_app)
-        
+
         sub_parser = commands.add_parser("destroy", help="Destroy an app with zero instances")
         sub_parser.add_argument("app_id", metavar="app-id", help="Application ID")
         sub_parser.set_defaults(func=self.destroy_app)
@@ -98,6 +101,7 @@ class Applications(plugins.DrovePlugin):
             app_rows.append(row)
 
         app_rows = sorted(app_rows, key=itemgetter(options.sort), reverse=options.reverse)
+        app_rows = droveutils.filter_rows(app_rows, options.filter)
 
         headers = ["Id", "Name", "State", "Total CPU", "Total Memory(MB)", "Required Instances", "Healthy Instances", "Created", "Updated"]
         droveutils.print_table(headers, app_rows)

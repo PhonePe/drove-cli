@@ -1,11 +1,11 @@
 import argparse
 from operator import itemgetter
+from types import SimpleNamespace
+
 import droveclient
 import droveutils
 import plugins
 
-from types import SimpleNamespace
-from urllib.parse import urlencode
 
 class Executors(plugins.DrovePlugin):
     def __init__(self) -> None:
@@ -15,10 +15,11 @@ class Executors(plugins.DrovePlugin):
 
     def populate_options(self, drove_client: droveclient.DroveClient, subparser: argparse.ArgumentParser):
         parser = subparser.add_parser(self.name(), help="Drove cluster executor related commands")
-        
+
         commands = parser.add_subparsers(help="Available commands for cluster executor management")
 
         sub_parser = commands.add_parser("list", help="List all executors")
+        sub_parser.add_argument("--filter", help="Show only rows matching the given text", type=str)
         sub_parser.set_defaults(func=self.list)
 
         sub_parser = commands.add_parser("info", help="Show details about executor")
@@ -58,6 +59,7 @@ class Executors(plugins.DrovePlugin):
 
     def list(self, options: SimpleNamespace):
         raw = self.drove_client.get("/apis/v1/cluster/executors")
+        raw = droveutils.filter_rows(raw, options.filter)
         droveutils.print_dict_table(raw, headers={"executorId" : "Executor ID",
                                                 "hostname" : "Host",
                                                 "port" : "Port",
@@ -199,4 +201,4 @@ class Executors(plugins.DrovePlugin):
             print("Error un-blacklisting: status: {status} message: {message} raw: {raw}"
                   .format(status = e.status_code, message = str(e), raw = e.raw))
         except Exception as e:
-            print("Error un-blacklisting: " + str(e))    
+            print("Error un-blacklisting: " + str(e))

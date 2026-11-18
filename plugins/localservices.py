@@ -1,13 +1,15 @@
 import argparse
+import json
+from operator import itemgetter
+from types import SimpleNamespace
+
+import tenacity
+from tenacity import retry
+
 import droveclient
 import droveutils
-import json
 import plugins
-import tenacity
 
-from operator import itemgetter
-from tenacity import retry
-from types import SimpleNamespace
 
 class LocalServices(plugins.DrovePlugin):
     def __init__(self) -> None:
@@ -22,6 +24,7 @@ class LocalServices(plugins.DrovePlugin):
         commands = parser.add_subparsers(help="Available commands for local services management")
 
         sub_parser = commands.add_parser("list", help="List all local services")
+        sub_parser.add_argument("--filter", help="Show only rows matching the given text", type=str)
         sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 9), default = 0)
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.list_services)
@@ -38,11 +41,11 @@ class LocalServices(plugins.DrovePlugin):
         sub_parser.add_argument("spec_file", metavar="spec-file", help="JSON spec file for the local service")
         sub_parser.set_defaults(func=self.create_service)
         sub_parser.add_argument("--instances", "-i", metavar="instances", help="Number instances to run per executor. Default: 1", type=int, default = 1)
-        
+
         sub_parser = commands.add_parser("destroy", help="Destroy an inactive local service")
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.set_defaults(func=self.destroy_service)
-        
+
         sub_parser = commands.add_parser("activate", help="Activate a local service")
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.set_defaults(func=self.activate_service)
@@ -52,7 +55,7 @@ class LocalServices(plugins.DrovePlugin):
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.set_defaults(func=self.conftest_service)
 
-        
+
         sub_parser = commands.add_parser("deactivate", help="Deactivate a local service")
         sub_parser.add_argument("service_id", metavar="service-id", help="Local service ID")
         sub_parser.set_defaults(func=self.deactivate_service)
@@ -96,6 +99,7 @@ class LocalServices(plugins.DrovePlugin):
             service_rows.append(row)
 
         service_rows = sorted(service_rows, key=itemgetter(options.sort), reverse=options.reverse)
+        service_rows = droveutils.filter_rows(service_rows, options.filter)
 
         headers = ["Id", "Name", "State", "Activation State", "Total CPU", "Total Memory(MB)", "Instances Per Host", "Healthy Instances", "Created", "Updated"]
         droveutils.print_table(headers, service_rows)
@@ -162,7 +166,7 @@ class LocalServices(plugins.DrovePlugin):
         }
         data = self.drove_client.post("/apis/v1/localservices/operations", operation)
         print("Local service instance count updated")
-    
+
     def restart_service(self, options: SimpleNamespace):
         operation = {
             "type": "RESTART",

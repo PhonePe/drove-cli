@@ -1,12 +1,13 @@
 import argparse
-import droveclient
-import droveutils
 import json
-import plugins
-
 from collections import OrderedDict
 from operator import itemgetter
 from types import SimpleNamespace
+
+import droveclient
+import droveutils
+import plugins
+
 
 class Tasks(plugins.DrovePlugin):
     def __init__(self) -> None:
@@ -31,6 +32,7 @@ class Tasks(plugins.DrovePlugin):
 
         sub_parser = commands.add_parser("list", help="List all active tasks")
         sub_parser.add_argument("--app", "-a", help="Show tasks only for the given source app", type=str)
+        sub_parser.add_argument("--filter", help="Show only rows matching the given text", type=str)
         sub_parser.add_argument("--sort", "-s", help="Sort output by column", type=int, choices=range(0, 9), default = 0)
         sub_parser.add_argument("--reverse", "-r", help="Sort in reverse order", action="store_true")
         sub_parser.set_defaults(func=self.list_task)
@@ -57,7 +59,7 @@ class Tasks(plugins.DrovePlugin):
         sub_parser.add_argument("tasklogfile", help="Log filename to download")
         sub_parser.add_argument("--out", "-o", help="Filename to download to. Default is the same filename as provided.")
         sub_parser.set_defaults(func=self.log_download)
-        
+
         super().populate_options(drove_client, parser)
 
     def create_task(self, options: SimpleNamespace):
@@ -117,6 +119,7 @@ class Tasks(plugins.DrovePlugin):
             task_rows.append(row)
 
         task_rows = sorted(task_rows, key=itemgetter(options.sort), reverse=options.reverse)
+        task_rows = droveutils.filter_rows(task_rows, options.filter)
 
         headers = ["Id", "Source App", "Task ID", "State", "Host", "CPU", "Memory(MB)", "Created", "Updated"]
         droveutils.print_table(headers, task_rows)
@@ -144,13 +147,13 @@ class Tasks(plugins.DrovePlugin):
         data["Last Updated"] = droveutils.to_date(raw.get("updated"))
 
         droveutils.print_dict(data)
-        
+
     def show_logs_list(self, options):
         droveutils.list_logs(self.drove_client, "tasks", options.source_app, options.task_id)
 
     def log_tail(self, options):
         droveutils.tail_log(self.drove_client, "tasks", options.source_app, options.task_id, options.log)
-        
+
     def log_download(self, options):
         filename = options.tasklogfile
         if options.out and len(options.out) > 0:
