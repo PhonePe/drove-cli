@@ -103,8 +103,8 @@ class Applications(plugins.DrovePlugin):
             instance_row.append(droveutils.to_date(instance["updated"]))
 
             rows.append(instance_row)
-        rows = sorted(rows, key=itemgetter(options.sort), reverse=options.reverse)
         rows = droveutils.filter_rows(rows, options.filter)
+        rows = sorted(rows, key=itemgetter(options.sort), reverse=options.reverse)
         droveutils.print_table(headers, rows)
 
     def show_instance(self, options):

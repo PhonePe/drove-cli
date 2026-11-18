@@ -100,8 +100,8 @@ class Applications(plugins.DrovePlugin):
 
             app_rows.append(row)
 
-        app_rows = sorted(app_rows, key=itemgetter(options.sort), reverse=options.reverse)
         app_rows = droveutils.filter_rows(app_rows, options.filter)
+        app_rows = sorted(app_rows, key=itemgetter(options.sort), reverse=options.reverse)
 
         headers = ["Id", "Name", "State", "Total CPU", "Total Memory(MB)", "Required Instances", "Healthy Instances", "Created", "Updated"]
         droveutils.print_table(headers, app_rows)

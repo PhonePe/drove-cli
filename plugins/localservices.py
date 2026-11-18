@@ -98,8 +98,8 @@ class LocalServices(plugins.DrovePlugin):
 
             service_rows.append(row)
 
-        service_rows = sorted(service_rows, key=itemgetter(options.sort), reverse=options.reverse)
         service_rows = droveutils.filter_rows(service_rows, options.filter)
+        service_rows = sorted(service_rows, key=itemgetter(options.sort), reverse=options.reverse)
 
         headers = ["Id", "Name", "State", "Activation State", "Total CPU", "Total Memory(MB)", "Instances Per Host", "Healthy Instances", "Created", "Updated"]
         droveutils.print_table(headers, service_rows)

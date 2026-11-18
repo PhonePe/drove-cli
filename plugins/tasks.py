@@ -118,8 +118,8 @@ class Tasks(plugins.DrovePlugin):
 
             task_rows.append(row)
 
-        task_rows = sorted(task_rows, key=itemgetter(options.sort), reverse=options.reverse)
         task_rows = droveutils.filter_rows(task_rows, options.filter)
+        task_rows = sorted(task_rows, key=itemgetter(options.sort), reverse=options.reverse)
 
         headers = ["Id", "Source App", "Task ID", "State", "Host", "CPU", "Memory(MB)", "Created", "Updated"]
         droveutils.print_table(headers, task_rows)
